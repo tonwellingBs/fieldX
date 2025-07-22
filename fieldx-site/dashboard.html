@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroX - Dashboard Agrícola</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2A3D66;
+            --light-gray: #F4F4F4;
+            --white-color: #FFFFFF;
+            --dark-gray: #34495e;
+            --text-color: #333;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px;
+            --header-height: 60px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--text-color); background-color: var(--light-gray); display: flex; min-height: 100vh; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Poppins', sans-serif; color: var(--secondary-color); margin-bottom: 0.8rem; }
+
+        .dashboard-header { background-color: var(--white-color); height: var(--header-height); display: flex; align-items: center; padding: 0 25px; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 500; }
+        .dashboard-header .user-info { font-size: 1.2rem; color: var(--secondary-color); font-weight: 600; }
+        .dashboard-header .user-info i { margin-right: 10px; color: var(--primary-color); }
+
+        .sidebar { width: 250px; background-color: var(--dark-gray); color: var(--white-color); padding: 20px 0; box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0; }
+        .sidebar .logo { text-align: center; margin-bottom: 30px; font-size: 2.2rem; font-weight: 600; color: var(--primary-color); }
+        .sidebar .logo span { color: var(--white-color); }
+        .sidebar ul { list-style: none; padding: 0 15px; }
+        .sidebar ul li { margin-bottom: 10px; }
+        .sidebar ul li a { display: flex; align-items: center; padding: 12px 15px; color: var(--white-color); font-size: 1.1rem; border-radius: var(--border-radius); transition: background-color 0.3s ease; }
+        .sidebar ul li a i { margin-right: 15px; font-size: 1.4rem; }
+        .sidebar ul li a:hover, .sidebar ul li a.active { background-color: rgba(255, 255, 255, 0.1); color: var(--primary-color); }
+
+        .main-content { flex-grow: 1; padding: 25px; overflow-y: auto; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-top: 25px; }
+        .card { background-color: var(--white-color); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 25px; transition: transform 0.2s ease; }
+        .card:hover { transform: translateY(-3px); }
+        .card h3 { margin-bottom: 15px; font-size: 1.4rem; display: flex; align-items: center; }
+        .card h3 i { margin-right: 10px; color: var(--primary-color); }
+        .card p { font-size: 1rem; color: #555; margin-bottom: 10px; }
+
+        .card.weather .icon { font-size: 3rem; color: var(--primary-color); margin-right: 15px; vertical-align: middle; }
+        .card.weather .temp { font-size: 3rem; font-weight: 600; color: var(--secondary-color); display: inline-block; vertical-align: middle; }
+        .card.weather .details { font-size: 1rem; color: #777; margin-top: 5px; }
+
+        .card.map { grid-column: span 2; min-height: 400px; display: flex; flex-direction: column; }
+        .card.map #map { flex-grow: 1; border-radius: var(--border-radius); min-height: 300px; background-color: var(--light-gray); }
+
+        .card.chart { grid-column: span 2; }
+        .card.chart canvas { max-height: 350px; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: var(--white-color); padding: 20px; border-radius: var(--border-radius); width: 90%; max-width: 500px; }
+        .close { float: right; font-size: 1.5rem; cursor: pointer; }
+
+        .alert { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background-color: #d32f2f; color: var(--white-color); padding: 10px 20px; border-radius: 5px; z-index: 1000; display: none; }
+        .whatsapp-btn { position: fixed; bottom: 20px; right: 20px; background-color: #25D366; color: var(--white-color); border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer; box-shadow: var(--shadow); }
+
+        @media (max-width: 992px) {
+            .sidebar { width: 100%; height: auto; position: relative; top: 0; box-shadow: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+            .sidebar ul { display: flex; flex-wrap: wrap; justify-content: center; }
+            .sidebar ul li { margin: 5px 10px; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .card.map, .card.chart { grid-column: span 1; }
+        }
+        @media (max-width: 576px) {
+            .dashboard-header .user-info { font-size: 1rem; }
+            .main-content { padding: 15px; }
+            .dashboard-grid { gap: 15px; }
+            .card { padding: 20px; }
+            .card h3 { font-size: 1.2rem; }
+        }
+        .calendar { 
+    display: grid; 
+    grid-template-columns: repeat(7, 1fr); 
+    gap: 5px; 
+}
+.calendar div { 
+    padding: 10px; 
+    text-align: center; 
+    background: #f9f9f9; 
+    cursor: pointer; 
+}
+.calendar div:hover { 
+    background: #e0e0e0; 
+}
+.calendar .header { 
+    background: var(--primary-color); 
+    color: var(--white-color); 
+}
+.calendar .has-action { 
+    background: #d4edda; 
+    font-weight: bold; 
+}
+.modal { 
+    display: none; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,0,0,0.5); 
+    justify-content: center; 
+    align-items: center; 
+}
+.modal-content { 
+    background: var(--white-color); 
+    padding: 20px; 
+    border-radius: var(--border-radius); 
+    max-width: 500px; 
+    width: 90%; 
+}
+.modal-content h3 { 
+    margin-bottom: 15px; 
+}
+.modal-content button { 
+    margin-top: 10px; 
+    padding: 8px 15px; 
+    background: var(--primary-color); 
+    color: var(--white-color); 
+    border: none; 
+    border-radius: 5px; 
+    cursor: pointer; 
+}
+.modal-content button:hover { 
+    background: #45a049; 
+}
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="logo">Agro<span>X</span></div>
+        <ul>
+            <li><a href="#dashboard-overview" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="#planning-section"><i class="fas fa-leaf"></i> Planejamento</a></li>
+            <li><a href="#tools-section"><i class="fas fa-calculator"></i> Ferramentas</a></li>
+            <li><a href="#reports-section"><i class="fas fa-file-alt"></i> Relatórios</a></li>
+            <li><a href="#monitoring-section"><i class="fas fa-map-marker-alt"></i> Monitoramento</a></li>
+            <li><a href="#profile-section"><i class="fas fa-user-circle"></i> Perfil</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <section id="dashboard-overview">
+            <header class="dashboard-header">
+                <div class="user-info">
+                    <i class="fas fa-user-tie"></i> Bem-vindo, <span id="user-name">Usuário</span> - <span id="farm-name">Fazenda</span>
+                </div>
+                <button id="logout-btn" style="margin-left: auto; padding: 5px 10px; background-color: #f44336; color: var(--white-color); border: none; border-radius: 5px;">Sair</button>
+            </header>
+
+            <h2>Visão Geral</h2>
+            <div class="dashboard-grid">
+                <div class="card weather">
+                    <h3><i class="fas fa-cloud"></i> Clima Hoje</h3>
+                    <div><i id="weather-icon" class="icon fas fa-sun"></i> <span id="weather-temp">25°C</span></div>
+                    <p id="weather-desc">Carregando...</p>
+                </div>
+                <!-- Coloque dentro de #dashboard-overview, após o card "Clima Hoje" -->
+<div class="card cost-management">
+    <h3><i class="fas fa-money-bill-wave"></i> Gestão de Custos e ROI</h3>
+    <p style="font-size: 0.9rem; color: #555;">Insira os custos e retorno para calcular o ROI e visualize os resultados.</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+        <input type="number" id="seed-cost" placeholder="Custo de Sementes (R$)" step="0.01" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 120px;">
+        <input type="number" id="fertilizer-cost" placeholder="Custo de Fertilizantes (R$)" step="0.01" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 120px;">
+        <input type="number" id="labor-cost" placeholder="Custo de Mão de Obra (R$)" step="0.01" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 120px;">
+        <input type="number" id="revenue" placeholder="Retorno Total (R$)" step="0.01" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 120px;">
+        <button id="calculate-roi-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Calcular ROI</button>
+    </div>
+    <p id="roi-result" style="font-size: 1.1rem; color: #2A3D66; font-weight: 600; margin-bottom: 15px;"></p>
+    <div style="position: relative; height: 200px;">
+        <canvas id="roiChart"></canvas>
+    </div>
+    <p id="roi-tip" style="font-size: 0.8rem; color: #777; margin-top: 10px;">* ROI positivo indica lucro; negativo indica prejuízo.</p>
+</div>
+
+<!-- Cole no final do <script> existente, antes do </script> -->
+<script>
+    // Função para calcular o ROI
+    function calculateROI() {
+        const seedCost = parseFloat(document.getElementById('seed-cost').value) || 0;
+        const fertilizerCost = parseFloat(document.getElementById('fertilizer-cost').value) || 0;
+        const laborCost = parseFloat(document.getElementById('labor-cost').value) || 0;
+        const revenue = parseFloat(document.getElementById('revenue').value) || 0;
+
+        const totalCost = seedCost + fertilizerCost + laborCost;
+        const roi = ((revenue - totalCost) / totalCost) * 100;
+
+        // Exibe o resultado
+        const resultElement = document.getElementById('roi-result');
+        resultElement.textContent = `ROI: ${roi.toFixed(2)}% (Custo Total: R$ ${totalCost.toFixed(2)})`;
+        resultElement.style.color = roi >= 0 ? '#4CAF50' : '#d32f2f'; // Verde para lucro, vermelho para prejuízo
+
+        // Atualiza o gráfico
+        updateROIChart(totalCost, revenue, roi);
+    }
+
+    // Função para atualizar o gráfico
+    function updateROIChart(cost, revenue, roi) {
+        const ctx = document.getElementById('roiChart').getContext('2d');
+        if (window.roiChartInstance) window.roiChartInstance.destroy(); // Destrói o gráfico anterior
+
+        window.roiChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Custo Total', 'Retorno', 'Lucro/Prejuízo'],
+                datasets: [{
+                    label: 'Valores (R$)',
+                    data: [cost, revenue, revenue - cost],
+                    backgroundColor: ['#2A3D66', '#4CAF50', roi >= 0 ? '#4CAF50' : '#d32f2f'],
+                    borderColor: ['#2A3D66', '#4CAF50', roi >= 0 ? '#4CAF50' : '#d32f2f'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: { y: { beginAtZero: true, title: { display: true, text: 'R$' } } },
+                plugins: {
+                    legend: { labels: { color: '#333' } },
+                    tooltip: { callbacks: { label: (context) => `R$ ${context.raw.toFixed(2)}` } }
+                }
+            }
+        });
+    }
+
+    // Evento do botão
+    document.getElementById('calculate-roi-btn').addEventListener('click', calculateROI);
+
+    // Carrega o gráfico com valores iniciais (opcional)
+    window.onload = () => {
+        loadUserProfile();
+        renderProductivityChart();
+        // Exemplo inicial (pode ser removido)
+        document.getElementById('seed-cost').value = 500;
+        document.getElementById('fertilizer-cost').value = 300;
+        document.getElementById('labor-cost').value = 200;
+        document.getElementById('revenue').value = 1200;
+        calculateROI();
+    };
+</script>
+                <div class="card">
+                    <h3><i class="fas fa-chart-bar"></i> Produtividade</h3>
+                    <canvas id="productivityChart"></canvas>
+                </div>
+                <div class="card map">
+                    <h3><i class="fas fa-map-marker-alt"></i> Localização</h3>
+                    <div id="map"></div>
+                </div>
+            </div>
+            <div id="alerts" class="alert"></div>
+        </section>
+
+        <section id="planning-section">
+            <h2><i class="fas fa-leaf"></i> Planejamento de Safra</h2>
+            <div class="dashboard-grid">
+                <div class="card" id="crop-cards">
+                    <div class="card">
+    <h3><i class="fas fa-calendar-check"></i> Calendário de Ações</h3>
+    <div id="calendar" class="calendar"></div>
+    <button onclick="openActionModal()">Adicionar Ação</button>
+</div>
+<div id="action-modal" class="modal">
+    <div class="modal-content">
+        <h3>Adicionar Ação</h3>
+        <input id="action-date" type="date">
+        <input id="action-description" placeholder="Descrição da Ação (ex: Reunião, Plantio)" type="text">
+        <button onclick="addAction()">Salvar</button>
+        <button onclick="closeActionModal()">Cancelar</button>
+    </div>
+</div>
+                    <h3>Culturas</h3>
+                    <button id="add-crop-btn" class="btn" style="margin-bottom: 10px;"><i class="fas fa-plus"></i> Adicionar Cultura</button>
+                    <div id="crops-list" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tools-section">
+            <h2><i class="fas fa-calculator"></i> Ferramentas</h2>
+            <div class="dashboard-grid">
+                <div class="card">
+                    <h3>Calculadora de Regra de 3</h3>
+                    <input id="rule3-val1" placeholder="Valor 1" type="number" style="padding: 8px; margin: 5px 0;">
+                    <input id="rule3-val2" placeholder="Valor 2" type="number" style="padding: 8px; margin: 5px 0;">
+                    <input id="rule3-result" placeholder="Resultado" type="number" style="padding: 8px; margin: 5px 0;">
+                    <button id="calc-rule3-btn" class="btn" style="padding: 8px 15px;">Calcular</button>
+                    <p id="rule3-output"></p>
+                </div>
+                <div class="card">
+                    <h3>Cálculo por Hectare</h3>
+                    <input id="hectare-cost" placeholder="Custo (R$/ha)" type="number" style="padding: 8px; margin: 5px 0;">
+                    <input id="hectare-area" placeholder="Área (ha)" type="number" style="padding: 8px; margin: 5px 0;">
+                    <button id="calc-hectare-btn" class="btn" style="padding: 8px 15px;">Calcular</button>
+                    <p id="hectare-output"></p>
+                </div>
+            </div>
+        </section>
+
+        <section id="reports-section">
+    <h2><i class="fas fa-file-alt"></i> Relatórios</h2>
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Relatório do Consultor</h3>
+            <button id="generate-report-btn" class="btn" style="padding: 8px 15px;"><i class="fas fa-file-pdf"></i> Baixar Relatório</button>
+            <p id="report-output"></p>
+        </div>
+    </div>
+</section>
+
+<section id="reports-section">
+    <h2><i class="fas fa-file-alt"></i> Relatórios</h2>
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Relatório do Consultor</h3>
+            <button id="read-report-btn" class="btn" style="padding: 8px 15px; margin-right: 10px;"><i class="fas fa-eye"></i> Leitura</button>
+            <button id="download-report-btn" class="btn" style="padding: 8px 15px;"><i class="fas fa-file-pdf"></i> Baixar Relatório</button>
+            <p id="report-output"></p>
+            <p id="report-status" style="font-size: 0.9rem; color: #555; margin-top: 10px;"></p>
+        </div>
+    </div>
+    <div id="alerts" class="alert" style="display: none; position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background-color: #d32f2f; color: var(--white-color); padding: 10px 20px; border-radius: 5px; z-index: 1000;">Você tem relatórios não lidos!</div>
+</section>
+
+<script>
+    // Simula o armazenamento de relatórios no localStorage
+    let reports = JSON.parse(localStorage.getItem('reports')) || [];
+    let lastReadTime = localStorage.getItem('lastReadTime') || null;
+
+    // Função para verificar e exibir alertas
+    function checkAlerts() {
+        const unreadReports = reports.filter(r => !r.read).length;
+        const alertsDiv = document.getElementById('alerts');
+        if (unreadReports > 0 && (!lastReadTime || new Date(lastReadTime) < new Date(reports[0]?.generatedAt))) {
+            alertsDiv.style.display = 'block';
+            setTimeout(() => alertsDiv.style.display = 'none', 5000); // Alerta some após 5 segundos
+        } else {
+            alertsDiv.style.display = 'none';
+        }
+        updateReportStatus();
+    }
+
+    // Função para gerar o relatório
+    function generateReport() {
+        const reportDate = new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const reportContent = `
+Relatório do Consultor - AgroX
+Data: ${reportDate}
+Status: Gerado pelo Consultor
+Detalhes: Este relatório contém uma análise detalhada da safra atual. Produtividade estimada: 5.2 ton/ha. Recomendações: Ajustar irrigação e monitorar nutrientes.
+        `;
+        return { content: reportContent, generatedAt: new Date().toISOString(), read: false };
+    }
+
+    // Botão "Leitura"
+    document.getElementById('read-report-btn').addEventListener('click', () => {
+        const report = generateReport();
+        reports.unshift(report); // Adiciona novo relatório no início
+        localStorage.setItem('reports', JSON.stringify(reports));
+
+        const output = document.getElementById('report-output');
+        output.textContent = report.content;
+        document.getElementById('report-status').textContent = 'Status: Não lido';
+        report.read = true; // Marca como lido ao visualizar
+        localStorage.setItem('reports', JSON.stringify(reports));
+        localStorage.setItem('lastReadTime', new Date().toISOString());
+        checkAlerts();
+    });
+
+    // Botão "Baixar Relatório"
+    document.getElementById('download-report-btn').addEventListener('click', () => {
+        const report = generateReport();
+        reports.unshift(report);
+        localStorage.setItem('reports', JSON.stringify(reports));
+
+        const output = document.getElementById('report-output');
+        output.textContent = report.content;
+
+        const blob = new Blob([report.content], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `relatorio_consultor_${reportDate.replace(/\//g, '-')}.txt`;
+        link.textContent = 'Clique aqui para baixar';
+        output.appendChild(document.createElement('br'));
+        output.appendChild(link);
+
+        report.read = true; // Marca como lido ao baixar
+        localStorage.setItem('reports', JSON.stringify(reports));
+        localStorage.setItem('lastReadTime', new Date().toISOString());
+        checkAlerts();
+    });
+
+    // Atualiza o status do relatório
+    function updateReportStatus() {
+        const status = document.getElementById('report-status');
+        const latestReport = reports[0];
+        if (latestReport && !latestReport.read) {
+            status.textContent = 'Status: Não lido';
+            status.style.color = '#d32f2f';
+        } else if (latestReport) {
+            status.textContent = 'Status: Lido';
+            status.style.color = '#4CAF50';
+        } else {
+            status.textContent = 'Nenhum relatório gerado ainda.';
+            status.style.color = '#555';
+        }
+    }
+
+    // Verifica alertas ao carregar a página
+    window.onload = () => {
+        checkAlerts();
+    };
+</script>
+
+        <section id="monitoring-section" class="dashboard-section">
+    <h2><i class="fas fa-map-marker-alt"></i> Monitoramento em Tempo Real</h2>
+    <p>Acompanhe a localização e o status de suas máquinas no campo, otimizando operações e recursos. (Dados simulados)</p>
+
+    <div class="card" style="margin-bottom: 30px;">
+        <h3><i class="fas fa-tractor"></i> Frota Ativa</h3>
+        <div class="machines-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+            <div class="machine-panel" id="machine-panel-1" style="background-color: var(--light-gray); padding: 15px; border-radius: 8px;">
+                <h4>Trator John Deere 7850 <span id="machine1-status" style="font-size: 0.9em; font-weight: normal; color: var(--primary-color);">(Status)</span></h4>
+                <p>ID: JD7850</p>
+                <p>Velocidade: <span id="machine1-speed">--</span> km/h</p>
+                <p>Combustível: <span id="machine1-fuel">--</span>%</p>
+                <p>Área Trabalhada: <span id="machine1-area">--</span> ha</p>
+                <p>Última Atualização: <span id="machine1-time">--</span></p>
+            </div>
+            <div class="machine-panel" id="machine-panel-2" style="background-color: var(--light-gray); padding: 15px; border-radius: 8px;">
+                <h4>Colheitadeira Case IH 8250 <span id="machine2-status" style="font-size: 0.9em; font-weight: normal; color: gray;">(Status)</span></h4>
+                <p>ID: CIH8250</p>
+                <p>Velocidade: <span id="machine2-speed">--</span> km/h</p>
+                <p>Combustível: <span id="machine2-fuel">--</span>%</p>
+                <p>Área Trabalhada: <span id="machine2-area">--</span> ha</p>
+                <p>Última Atualização: <span id="machine2-time">--</span></p>
+            </div>
+            <div class="machine-panel" id="machine-panel-3" style="background-color: var(--light-gray); padding: 15px; border-radius: 8px;">
+                <h4>Pulverizador Jacto <span id="machine3-status" style="font-size: 0.9em; font-weight: normal; color: gray;">(Status)</span></h4>
+                <p>ID: JCT4x4</p>
+                <p>Velocidade: <span id="machine3-speed">--</span> km/h</p>
+                <p>Combustível: <span id="machine3-fuel">--</span>%</p>
+                <p>Área Trabalhada: <span id="machine3-area">--</span> ha</p>
+                <p>Última Atualização: <span id="machine3-time">--</span></p>
+            </div>
+        </div>
+        <button class="btn btn-secondary" style="margin-top: 20px;"><i class="fas fa-list"></i> Ver Histórico de Máquinas</button>
+    </div>
+
+    <div class="card">
+        <h3><i class="fas fa-globe-americas"></i> Posição no Mapa</h3>
+        <div id="monitoring-map" style="height: 500px; width: 100%; border-radius: var(--border-radius); background-color: #eee; margin-top: 20px;">
+            </div>
+        <p id="monitoring-map-info" style="font-size: 0.9rem; color: #777; margin-top: 15px;">Atualizando posições a cada 5 segundos.</p>
+    </div>
+</section>
+
+        <!-- Coloque dentro de #monitoring-section, após o card "Mapa de Monitoramento" -->
+<div class="card iot-monitoring">
+    <h3><i class="fas fa-drone"></i> Monitoramento IoT e Drones</h3>
+    <p style="font-size: 0.9rem; color: #555;">Carregue dados de drones ou insira leituras de sensores para monitoramento em tempo real.</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+        <input type="file" id="drone-upload" accept=".jpg,.png,.csv" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
+        <button id="upload-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Carregar Dados</button>
+        <div style="display: flex; gap: 10px;">
+            <input type="number" id="humidity" placeholder="Umidade (%)" step="0.1" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 100px;">
+            <input type="number" id="temperature" placeholder="Temperatura (°C)" step="0.1" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 100px;">
+            <input type="number" id="plant-health" placeholder="Saúde Planta (0-100)" step="1" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 100px;">
+            <button id="update-sensor-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Atualizar</button>
+        </div>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+        <p id="sensor-status" style="font-size: 1.1rem; color: #2A3D66; font-weight: 600;">Status: Aguardando dados...</p>
+        <div id="drone-preview" style="max-width: 200px; max-height: 150px; overflow: hidden; border: 1px solid #ccc; border-radius: 5px; display: none;">
+            <img id="drone-image" style="width: 100%; height: 100%; object-fit: cover;" alt="Pré-visualização de Drone">
+        </div>
+    </div>
+</div>
+
+<!-- Cole no final do <script> existente, antes do </script> -->
+<script>
+    // Função para carregar e exibir dados de drones
+    function handleDroneUpload() {
+        const fileInput = document.getElementById('drone-upload');
+        const preview = document.getElementById('drone-preview');
+        const image = document.getElementById('drone-image');
+        const file = fileInput.files[0];
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                image.src = e.target.result;
+                preview.style.display = 'block';
+                document.getElementById('sensor-status').textContent = `Dados de Drone carregados: ${file.name}`;
+                document.getElementById('sensor-status').style.color = '#4CAF50';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            preview.style.display = 'none';
+            document.getElementById('sensor-status').textContent = 'Nenhum arquivo selecionado.';
+            document.getElementById('sensor-status').style.color = '#d32f2f';
+        }
+    }
+
+    // Função para atualizar dados de sensores
+    function updateSensorData() {
+        const humidity = parseFloat(document.getElementById('humidity').value) || 0;
+        const temperature = parseFloat(document.getElementById('temperature').value) || 0;
+        const plantHealth = parseFloat(document.getElementById('plant-health').value) || 0;
+
+        if (humidity >= 0 && temperature >= 0 && plantHealth >= 0 && plantHealth <= 100) {
+            const status = `Umidade: ${humidity}%, Temp: ${temperature}°C, Saúde: ${plantHealth}%`;
+            document.getElementById('sensor-status').textContent = `Status: ${status} (Atualizado às ${new Date().toLocaleTimeString('pt-BR')})`;
+            document.getElementById('sensor-status').style.color = '#4CAF50';
+
+            // Simula integração com mapa (pode ser expandido)
+            console.log(`Dados IoT: ${status}`);
+        } else {
+            document.getElementById('sensor-status').textContent = 'Valores inválidos! Verifique os dados.';
+            document.getElementById('sensor-status').style.color = '#d32f2f';
+        }
+
+        // Limpa os campos após atualização
+        document.getElementById('humidity').value = '';
+        document.getElementById('temperature').value = '';
+        document.getElementById('plant-health').value = '';
+    }
+
+    // Eventos
+    document.getElementById('upload-btn').addEventListener('click', handleDroneUpload);
+    document.getElementById('update-sensor-btn').addEventListener('click', updateSensorData);
+
+    // Carrega ao iniciar (opcional, para teste)
+    window.onload = () => {
+        loadUserProfile();
+        renderProductivityChart();
+        loadActivities(); // Se já implementado
+        // Exemplo inicial (pode ser removido)
+        document.getElementById('humidity').value = 65.5;
+        document.getElementById('temperature').value = 28.3;
+        document.getElementById('plant-health').value = 85;
+        updateSensorData();
+        loadMonitoringMap();
+    };
+</script>
+
+        <section id="profile-section">
+            <h2><i class="fas fa-user-circle"></i> Perfil</h2>
+            <div class="dashboard-grid">
+                <div class="card">
+                    <h3>Informações</h3>
+                    <select id="user-role" style="padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc;" onchange="changeRole()">
+    <option value="produtor">Produtor</option>
+    <option value="consultor">Consultor</option>
+    <option value="agronomo">Agrônomo</option>
+</select>
+<!-- Coloque após #profile-section, antes do fechamento do <main> -->
+<section id="community-section">
+    <h2><i class="fas fa-users"></i> Comunidade de Produtores</h2>
+    <div class="dashboard-grid">
+        <!-- Fórum -->
+        <div class="card community-forum">
+            <h3><i class="fas fa-comments"></i> Fórum</h3>
+            <textarea id="forum-post" placeholder="Escreva sua dica ou pergunta..." style="width: 100%; height: 80px; padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 10px;"></textarea>
+            <button id="post-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Publicar</button>
+            <ul id="forum-posts" style="list-style: none; padding: 0; max-height: 200px; overflow-y: auto; margin-top: 10px;"></ul>
+        </div>
+
+        <!-- Chat -->
+        <div class="card community-chat">
+            <h3><i class="fas fa-comment-alt"></i> Chat</h3>
+            <div id="chat-messages" style="height: 150px; overflow-y: auto; border: 1px solid #ccc; border-radius: 5px; padding: 10px; background-color: #FFFFFF; margin-bottom: 10px;"></div>
+            <input type="text" id="chat-input" placeholder="Digite sua mensagem..." style="width: 70%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
+            <button id="send-chat-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px; margin-left: 10px;">Enviar</button>
+        </div>
+
+        <!-- Currículos -->
+        <div class="card community-profiles">
+            <h3><i class="fas fa-user-tie"></i> Currículos</h3>
+            <button id="add-profile-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px; margin-bottom: 10px;">Adicionar Currículo</button>
+            <ul id="profiles-list" style="list-style: none; padding: 0; max-height: 200px; overflow-y: auto;"></ul>
+        </div>
+    </div>
+</section>
+
+<!-- Cole no final do <script> existente, antes do </script> -->
+<script>
+    // Função para carregar e exibir posts do fórum
+    function loadForumPosts() {
+        let posts = JSON.parse(localStorage.getItem('forumPosts')) || [];
+        const forumPosts = document.getElementById('forum-posts');
+        forumPosts.innerHTML = '';
+
+        posts.forEach((post, index) => {
+            const li = document.createElement('li');
+            li.style.padding = '8px';
+            li.style.borderBottom = '1px solid #eee';
+            li.innerHTML = `<strong>${post.user || 'Anônimo'}</strong>: ${post.content} <br><small>${new Date(post.timestamp).toLocaleString('pt-BR')}</small>`;
+            li.style.color = '#2A3D66';
+            forumPosts.appendChild(li);
+        });
+    }
+
+    // Função para adicionar um post ao fórum
+    function addForumPost() {
+        const content = document.getElementById('forum-post').value.trim();
+        if (content) {
+            const post = {
+                user: userData.username || 'Usuário',
+                content: content,
+                timestamp: new Date().toISOString()
+            };
+            let posts = JSON.parse(localStorage.getItem('forumPosts')) || [];
+            posts.unshift(post);
+            localStorage.setItem('forumPosts', JSON.stringify(posts));
+            document.getElementById('forum-post').value = '';
+            loadForumPosts();
+        }
+    }
+
+    // Função para carregar e exibir mensagens do chat
+    function loadChatMessages() {
+        let messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+        const chatMessages = document.getElementById('chat-messages');
+        chatMessages.innerHTML = '';
+
+        messages.forEach((message, index) => {
+            const p = document.createElement('p');
+            p.style.margin = '0';
+            p.innerHTML = `<strong>${message.user || 'Anônimo'}</strong>: ${message.content} <br><small>${new Date(message.timestamp).toLocaleString('pt-BR')}</small>`;
+            p.style.color = '#333';
+            chatMessages.appendChild(p);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Rola para a última mensagem
+        });
+    }
+
+    // Função para enviar uma mensagem no chat
+    function sendChatMessage() {
+        const content = document.getElementById('chat-input').value.trim();
+        if (content) {
+            const message = {
+                user: userData.username || 'Usuário',
+                content: content,
+                timestamp: new Date().toISOString()
+            };
+            let messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+            messages.push(message);
+            localStorage.setItem('chatMessages', JSON.stringify(messages));
+            document.getElementById('chat-input').value = '';
+            loadChatMessages();
+        }
+    }
+
+    // Função para carregar e exibir currículos
+    function loadProfiles() {
+        let profiles = JSON.parse(localStorage.getItem('communityProfiles')) || [];
+        const profilesList = document.getElementById('profiles-list');
+        profilesList.innerHTML = '';
+
+        profiles.forEach((profile, index) => {
+            const li = document.createElement('li');
+            li.style.padding = '8px';
+            li.style.borderBottom = '1px solid #eee';
+            li.innerHTML = `<strong>${profile.name}</strong> - ${profile.role} <br>Experiência: ${profile.experience} <br>Serviços: ${profile.services} <br><small>Adicionado em: ${new Date(profile.timestamp).toLocaleString('pt-BR')}</small>`;
+            li.style.color = '#2A3D66';
+            profilesList.appendChild(li);
+        });
+    }
+
+    // Função para adicionar um currículo
+    function addProfile() {
+        const name = prompt('Nome:');
+        const role = prompt('Cargo (ex.: Agrônomo, Produtor):');
+        const experience = prompt('Experiência (ex.: 5 anos em soja):');
+        const services = prompt('Serviços oferecidos (ex.: Consultoria, Venda de Sementes):');
+        if (name && role && experience && services) {
+            const profile = {
+                name: name,
+                role: role,
+                experience: experience,
+                services: services,
+                timestamp: new Date().toISOString()
+            };
+            let profiles = JSON.parse(localStorage.getItem('communityProfiles')) || [];
+            profiles.unshift(profile);
+            localStorage.setItem('communityProfiles', JSON.stringify(profiles));
+            loadProfiles();
+        }
+    }
+
+    // Eventos
+    document.getElementById('post-btn').addEventListener('click', addForumPost);
+    document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
+    document.getElementById('add-profile-btn').addEventListener('click', addProfile);
+
+    // Carrega ao iniciar
+    window.onload = () => {
+        loadUserProfile();
+        renderProductivityChart();
+        loadActivities(); // Se já implementado
+        loadForumPosts();
+        loadChatMessages();
+        loadProfiles();
+        // Exemplo inicial (pode ser removido)
+        if (!localStorage.getItem('forumPosts')) addForumPost(); // Simula um post inicial
+        if (!localStorage.getItem('chatMessages')) sendChatMessage(); // Simula uma mensagem inicial
+    };
+</script>
+
+<script>
+function changeRole() {
+    const select = document.getElementById('user-role');
+    if (select.value === 'consultor') {
+        window.location.href = 'consultor.html';
+    }
+}
+</script>
+                    </select>
+                    <input id="user-name-input" placeholder="Nome" style="padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc;">
+                    <input id="farm-name-input" placeholder="Nome da Fazenda" style="padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc;">
+                    <label><input type="checkbox" id="remember-login"> Lembrar Login</label>
+                    <button id="save-profile-btn" class="btn" style="padding: 8px 15px;">Salvar</button>
+                </div>
+            </div>
+        </section>
+
+        <div id="login-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>Login</h3>
+                <input id="login-username" placeholder="Usuário" style="width: 100%; padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc;">
+                <input id="login-password" type="password" placeholder="Senha" style="width: 100%; padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc;">
+                <button id="login-btn" class="btn" style="padding: 8px 15px;">Entrar</button>
+            </div>
+        </div>
+
+        <div id="upload-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>Upload de Arquivos</h3>
+                <input type="file" id="file-upload" accept=".pdf,.jpg,.jpeg,.png,.csv" style="margin: 10px 0;">
+                <button id="upload-btn" class="btn" style="padding: 8px 15px;">Enviar</button>
+                <p id="upload-message"></p>
+            </div>
+        </div>
+
+        <button class="whatsapp-btn" onclick="window.open('https://wa.me/5564999494453', '_blank')"><i class="fab fa-whatsapp"></i></button>
+    </main>
+
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBqwVP4QQRPNvJQeISnXu63yribN0Ms1bQ&callback=initMap" async defer></script>
+    <script>
+        const OPENWEATHER_API_KEY = '9eed8f7ae89829b2eb18b1a839a4eb6c';
+        let userData = JSON.parse(localStorage.getItem('userData')) || {};
+        let crops = JSON.parse(localStorage.getItem('crops')) || {};
+        let alerts = [];
+
+        function initMap() {
+            const map = new google.maps.Map(document.getElementById("map"), { center: { lat: -15.7942, lng: -47.8825 }, zoom: 8 });
+            const monitoringMap = new google.maps.Map(document.getElementById("monitoring-map"), { center: { lat: -15.7942, lng: -47.8825 }, zoom: 10 });
+        }
+
+        function fetchWeatherData() {
+            fetch(`https://api.openweathermap.org/data/2.5/weather?lat=-15.7942&lon=-47.8825&units=metric&appid=${OPENWEATHER_API_KEY}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('weather-temp').textContent = `${Math.round(data.main.temp)}°C`;
+                    document.getElementById('weather-desc').textContent = `${data.weather[0].description}, ${data.main.humidity}% umidade`;
+                    document.getElementById('weather-icon').className = `icon fas fa-${data.weather[0].main === 'Rain' ? 'cloud-rain' : 'sun'}`;
+                })
+                .catch(error => console.error("Erro ao carregar clima:", error));
+        }
+
+        function renderProductivityChart() {
+            const ctx = document.getElementById('productivityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: { labels: ['2023', '2024', '2025'], datasets: [{ label: 'Produtividade (ton/ha)', data: [4.5, 4.8, 5.0], backgroundColor: 'rgba(76, 175, 80, 0.6)' }] },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        function loadUserProfile() {
+            if (userData.username) {
+                document.getElementById('user-name').textContent = userData.username;
+                document.getElementById('farm-name').textContent = userData.farmName || 'Fazenda';
+                document.getElementById('login-modal').style.display = 'none';
+                loadDashboard();
+            } else {
+                document.getElementById('login-modal').style.display = 'block';
+            }
+        }
+
+        function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            if (username && password) {
+                userData = { username, role: 'produtor', farmName: 'Fazenda Exemplo' };
+                if (document.getElementById('remember-login').checked) localStorage.setItem('userData', JSON.stringify(userData));
+                loadUserProfile();
+            }
+        }
+
+        function logout() {
+            userData = {};
+            localStorage.removeItem('userData');
+            document.getElementById('login-modal').style.display = 'block';
+        }
+
+        function loadDashboard() {
+            fetchWeatherData();
+            renderProductivityChart();
+            updateRoleView();
+            loadCrops();
+            checkAlerts();
+            loadCalendar();
+        }
+
+        function updateRoleView() {
+            const role = userData.role;
+            document.querySelectorAll('.dashboard-section').forEach(section => {
+                section.style.display = ['produtor', 'consultor', 'agronomo'].includes(role) ? 'block' : 'none';
+                if (role === 'agronomo') section.querySelectorAll('.advanced-tool').forEach(tool => tool.style.display = 'block');
+                if (role === 'consultor') section.querySelectorAll('.notes-area').forEach(notes => notes.style.display = 'block');
+            });
+        }
+
+        function loadCrops() {
+            const cropsList = document.getElementById('crops-list');
+            cropsList.innerHTML = '';
+            ['Soja', 'Milho', 'Melancia', 'Sorgo'].forEach(crop => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `<h3>${crop}</h3><p>Produtividade: ${crops[crop]?.productivity || '0'} ton/ha</p><button class="btn" onclick="editCrop('${crop}')">Editar</button>`;
+                cropsList.appendChild(card);
+            });
+        }
+
+        function editCrop(crop) {
+            const productivity = prompt(`Produtividade de ${crop} (ton/ha):`, crops[crop]?.productivity || '');
+            if (productivity) {
+                crops[crop] = { ...crops[crop], productivity: parseFloat(productivity) };
+                localStorage.setItem('crops', JSON.stringify(crops));
+                loadCrops();
+            }
+        }
+
+        document.getElementById('add-crop-btn').addEventListener('click', () => {
+            const crop = prompt('Nova Cultura:');
+            if (crop) editCrop(crop);
+        });
+
+        document.getElementById('calc-rule3-btn').addEventListener('click', () => {
+            const val1 = parseFloat(document.getElementById('rule3-val1').value);
+            const val2 = parseFloat(document.getElementById('rule3-val2').value);
+            const result = val1 ? (val2 * 100) / val1 : 0;
+            document.getElementById('rule3-output').textContent = `Resultado: ${result.toFixed(2)}%`;
+        });
+
+        document.getElementById('calc-hectare-btn').addEventListener('click', () => {
+            const cost = parseFloat(document.getElementById('hectare-cost').value);
+            const area = parseFloat(document.getElementById('hectare-area').value);
+            const total = cost * area;
+            document.getElementById('hectare-output').textContent = `Custo Total: R$ ${total.toFixed(2)}`;
+        });
+
+        document.getElementById('generate-report-btn').addEventListener('click', () => {
+            const report = `Relatório AgroX - ${new Date().toLocaleDateString()}\nProdutividade: ${JSON.stringify(crops)}\n`;
+            document.getElementById('report-output').textContent = report;
+            const blob = new Blob([report], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'relatorio_agrox.txt';
+            link.click();
+        });
+
+        document.getElementById('upload-btn').addEventListener('click', () => {
+            const file = document.getElementById('file-upload').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const text = e.target.result;
+                    document.getElementById('upload-message').textContent = 'Arquivo carregado: ' + file.name;
+                    if (text.includes('baixo')) alerts.push('Alerta: Solo com nutrientes baixos!');
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function checkAlerts() {
+            const now = new Date();
+            alerts.forEach(alert => document.getElementById('alerts').style.display = 'block');
+            setInterval(() => {
+                document.getElementById('alerts').style.display = 'none';
+            }, 5000);
+        }
+
+        document.getElementById('login-btn').addEventListener('click', login);
+        document.getElementById('logout-btn').addEventListener('click', logout);
+        document.getElementById('save-profile-btn').addEventListener('click', () => {
+            userData.username = document.getElementById('user-name-input').value;
+            userData.farmName = document.getElementById('farm-name-input').value;
+            userData.role = document.getElementById('user-role').value;
+            localStorage.setItem('userData', JSON.stringify(userData));
+            loadUserProfile();
+        });
+
+        document.querySelectorAll('.close').forEach(close => {
+            close.addEventListener('click', () => {
+                close.parentElement.parentElement.style.display = 'none';
+            });
+        });
+
+        window.onload = loadUserProfile;
+        function loadCalendar() {
+    const calendar = document.getElementById('calendar');
+    calendar.innerHTML = `
+        <div class="header">Dom</div><div class="header">Seg</div><div class="header">Ter</div><div class="header">Qua</div>
+        <div class="header">Qui</div><div class="header">Sex</div><div class="header">Sáb</div>
+    `;
+    const currentDate = new Date('2025-07-21T16:39:00-03:00');
+    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    const firstDay = startOfMonth.getDay();
+    const actionsDB = JSON.parse(localStorage.getItem('actionsDB')) || [];
+    const userData = JSON.parse(localStorage.getItem('userData')) || {};
+
+    for (let i = 0; i < firstDay; i++) {
+        calendar.innerHTML += '<div></div>';
+    }
+    for (let day = 1; day <= endOfMonth.getDate(); day++) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0];
+        const actions = actionsDB.filter(a => a.date === date && a.clientEmail === userData.email);
+        const hasActions = actions.length > 0;
+        calendar.innerHTML += `
+            <div class="${hasActions ? 'has-action' : ''}" onclick="showActions('${date}')">
+                ${day}${hasActions ? `<br>${actions.map(a => a.description).join('<br>')}` : ''}
+            </div>`;
+    }
+}
+
+function showActions(date) {
+    const actionsDB = JSON.parse(localStorage.getItem('actionsDB')) || [];
+    const userData = JSON.parse(localStorage.getItem('userData')) || {};
+    const actions = actionsDB.filter(a => a.date === date && a.clientEmail === userData.email);
+    if (actions.length > 0) {
+        alert(`Ações para ${date}:\n${actions.map(a => `- ${a.description}`).join('\n')}`);
+    }
+}
+
+function openActionModal() {
+    document.getElementById('action-modal').style.display = 'flex';
+}
+
+function closeActionModal() {
+    document.getElementById('action-modal').style.display = 'none';
+}
+
+function addAction() {
+    const date = document.getElementById('action-date').value;
+    const description = document.getElementById('action-description').value;
+    const userData = JSON.parse(localStorage.getItem('userData')) || {};
+    if (date && description && userData.email) {
+        const actionsDB = JSON.parse(localStorage.getItem('actionsDB')) || [];
+        actionsDB.push({ clientEmail: userData.email, date, description });
+        localStorage.setItem('actionsDB', JSON.stringify(actionsDB));
+        loadCalendar();
+        closeActionModal();
+        document.getElementById('action-date').value = '';
+        document.getElementById('action-description').value = '';
+    } else {
+        alert('Preencha todos os campos.');
+    }
+}
+
+window.addEventListener('load', loadCalendar);
+    </script>
+</body>
+</html>

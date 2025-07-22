@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Field X - Informações e FAQ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css"> <style>
+        /* Estilos específicos para esta página de informações */
+        .page-content-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 80px 20px 50px 20px; /* Padding superior para compensar header fixo */
+        }
+        .page-content {
+            background-color: var(--white-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 40px;
+            margin-bottom: 30px; /* Espaço entre as seções caso o user esteja vendo sem hash */
+        }
+        .page-content h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: var(--secondary-color);
+            font-size: 2.8rem;
+        }
+        .page-content h2 {
+            color: var(--primary-color);
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 2rem;
+            border-bottom: 2px solid var(--light-gray);
+            padding-bottom: 10px;
+        }
+        .page-content h3 {
+            color: var(--secondary-color);
+            margin-top: 25px;
+            margin-bottom: 10px;
+            font-size: 1.4rem;
+        }
+        .page-content p, .page-content ul {
+            margin-bottom: 15px;
+            color: #666;
+            line-height: 1.7;
+        }
+        .page-content ul {
+            list-style-type: disc;
+            margin-left: 25px;
+        }
+
+        /* Estilos FAQ específicos */
+        .faq-item {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        .faq-item:last-child {
+            border-bottom: none;
+        }
+        .faq-item h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .faq-item h3 i {
+            margin-left: 10px;
+            transition: transform 0.3s ease;
+        }
+        .faq-item h3.open i {
+            transform: rotate(90deg);
+        }
+        .faq-item p {
+            color: #666;
+            display: none; /* Conteúdo escondido por padrão */
+            margin-top: 10px;
+        }
+        .faq-item p.open {
+            display: block; /* Conteúdo visível quando 'open' */
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">Field<span>X</span></a>
+            <nav class="nav-menu">
+                <ul>
+                    <li><a href="index.html#about">Sobre</a></li>
+                    <li><a href="index.html#services">Serviços</a></li>
+                    <li><a href="index.html#plans">Planos</a></li>
+                    <li><a href="index.html#planting-tips">Dicas</a></li>
+                    <li><a href="index.html#cases">Blog</a></li>
+                </ul>
+            </nav>
+            <div class="auth-buttons">
+                <a href="index.html" class="btn btn-secondary">Entrar</a>
+                <a href="index.html" class="btn">Cadastrar</a>
+            </div>
+            <div class="hamburger-menu">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-content-wrapper">
+        <div id="faq-section" class="page-content">
+            <h1>Perguntas Frequentes (FAQ)</h1>
+
+            <h2>Perguntas Gerais</h2>
+            <div class="faq-item">
+                <h3 onclick="toggleFaq(this)">O que é o Field X e como ele pode me ajudar? <i class="fas fa-chevron-right"></i></h3>
+                <p>O Field X é uma plataforma agrointeligente que utiliza dados e inteligência artificial para otimizar o planejamento da safra, gerenciar custos, prever lucros e monitorar operações no campo. Ele te ajuda a tomar decisões mais informadas para aumentar a produtividade e a rentabilidade da sua propriedade.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3 onclick="toggleFaq(this)">O Field X é compatível com minha máquina agrícola atual? <i class="fas fa-chevron-right"></i></h3>
+                <p>Nossa plataforma é projetada para ser compatível com uma ampla gama de equipamentos. Podemos integrar dados de diferentes fontes para fornecer uma visão unificada. Consulte nossa equipe de suporte para verificar compatibilidade específica.</p>
+            </div>
+
+            <h2>Planos e Assinaturas</h2>
+            <div class="faq-item">
+                <h3 onclick="toggleFaq(this)">Quais são os planos de assinatura do Field X? <i class="fas fa-chevron-right"></i></h3>
+                <p>Oferecemos planos Básico, Pro e Max, cada um com diferentes níveis de acesso a funcionalidades como relatórios com IA, monitoramento climático, consultoria automatizada e muito mais. Você pode ver os detalhes na seção "Planos" da nossa página inicial.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3 onclick="toggleFaq(this)">Posso mudar de plano a qualquer momento? <i class="fas fa-chevron-right"></i></h3>
+                <p>Sim, você pode fazer upgrade ou downgrade do seu plano a qualquer momento. As alterações e os valores proporcionais serão aplicados na sua próxima fatura.</p>
+            </div>
+            
+            <h2>Funcionalidades</h2>
+            <div class="faq-item">
+                <h3 onclick="toggleFaq(this)">Como o Field X usa IA para otimizar minha safra? <i class="fas fa-chevron-right"></i></h3>
+                <p>A inteligência artificial do Field X aprende com os dados da sua lavoura, clima, solo e histórico para fornecer recomendações personalizadas sobre densidade de plantio, adubação, controle de pragas e o momento ideal de colheita, maximizando seu potencial produtivo.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3 onclick="toggleFaq(this)">Posso acessar o Field X pelo meu celular? <i class="fas fa-chevron-right"></i></h3>
+                <p>Sim, o Field X é totalmente responsivo e otimizado para dispositivos móveis, permitindo que você acesse todas as funcionalidades do seu smartphone ou tablet, mesmo no campo.</p>
+            </div>
+
+            </div>
+
+        <div id="terms-section" class="page-content">
+            <h1>Termos de Uso do Field X</h1>
+            <p>Bem-vindo ao Field X. Ao acessar e utilizar nossa plataforma, você concorda em cumprir e estar vinculado aos seguintes termos e condições de uso. Por favor, leia-os atentamente.</p>
+
+            <h2>1. Aceitação dos Termos</h2>
+            <p>Ao se registrar ou utilizar o Field X, você reconhece ter lido, entendido e concordado com estes Termos de Uso, nossa Política de Privacidade e todas as leis e regulamentos aplicáveis.</p>
+
+            <h2>2. Serviços Oferecidos</h2>
+            <p>O Field X oferece ferramentas de planejamento de safra, cálculo de custos e lucros, monitoramento, relatórios e dicas agrícolas baseadas em dados e inteligência artificial.</p>
+
+            <h2>3. Conta do Usuário</h2>
+            <ul>
+                <li>Você é responsável por manter a confidencialidade de suas informações de login e senha.</li>
+                <li>Você concorda em notificar o Field X imediatamente sobre qualquer uso não autorizado de sua conta.</li>
+            </ul>
+
+            <h2>4. Propriedade Intelectual</h2>
+            <p>Todo o conteúdo presente no Field X, incluindo textos, gráficos, logotipos, ícones, imagens, clipes de áudio, downloads digitais, compilações de dados e software, é de propriedade do Field X ou de seus fornecedores de conteúdo e protegido por leis de direitos autorais e propriedade intelectual.</p>
+
+            <h2>5. Limitação de Responsabilidade</h2>
+            <p>O Field X não será responsável por quaisquer danos diretos, indiretos, incidentais, especiais ou consequenciais resultantes do uso ou da incapacidade de usar a plataforma.</p>
+
+            <h2>6. Modificações dos Termos</h2>
+            <p>O Field X reserva-se o direito de modificar estes Termos de Uso a qualquer momento, publicando os termos revisados na plataforma. O uso continuado da plataforma após quaisquer alterações constitui sua aceitação dos novos Termos.</p>
+
+            <h2>7. Lei Aplicável e Foro</h2>
+            <p>Estes Termos de Uso serão regidos e interpretados de acordo com as leis do Brasil. Qualquer disputa decorrente ou relacionada a estes Termos será submetida ao foro da comarca de Iporá, Estado de Goiás.</p>
+
+            <p style="text-align: center; margin-top: 50px;">Última atualização: 21 de Julho de 2025.</p>
+        </div>
+
+        <div id="privacy-section" class="page-content">
+            <h1>Política de Privacidade do Field X</h1>
+            <p>Esta Política de Privacidade descreve como o Field X coleta, usa e protege suas informações pessoais ao utilizar nossa plataforma.</p>
+
+            <h2>1. Coleta de Informações</h2>
+            <p>Coletamos informações que você nos fornece diretamente, como nome, e-mail, cidade, ao se cadastrar e utilizar nossos serviços. Também podemos coletar dados de uso da plataforma (ex: funcionalidades acessadas).</p>
+
+            <h2>2. Uso das Informações</h2>
+            <p>Utilizamos suas informações para:</p>
+            <ul>
+                <li>Fornecer e personalizar os serviços do Field X.</li>
+                <li>Melhorar a funcionalidade da plataforma.</li>
+                <li>Comunicar-nos com você sobre sua conta e atualizações.</li>
+                <li>Analisar o uso da plataforma para fins de pesquisa e desenvolvimento.</li>
+            </ul>
+
+            <h2>3. Compartilhamento de Informações</h2>
+            <p>Não vendemos, trocamos ou transferimos suas informações de identificação pessoal para terceiros sem o seu consentimento, exceto quando necessário para fornecer um serviço solicitado (ex: integrações com APIs que você autorize).</p>
+
+            <h2>4. Segurança dos Dados</h2>
+            <p>Implementamos medidas de segurança para proteger suas informações pessoais contra acesso não autorizado, alteração, divulgação ou destruição. No entanto, nenhum método de transmissão pela internet ou armazenamento eletrônico é 100% seguro.</p>
+
+            <h2>5. Seus Direitos</h2>
+            <p>Você tem o direito de acessar, corrigir ou excluir suas informações pessoais. Para exercer esses direitos, entre em contato conosco através dos canais de suporte.</p>
+
+            <h2>6. Alterações na Política de Privacidade</h2>
+            <p>O Field X pode atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre quaisquer alterações significativas publicando a nova política em nossa plataforma.</p>
+
+            <p style="text-align: center; margin-top: 50px;">Última atualização: 21 de Julho de 2025.</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-col">
+                <h4>Field X</h4>
+                <p>"Inteligência que cultiva resultados."</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Links Úteis</h4>
+                <ul>
+                    <li><a href="index.html#about">Sobre Nós</a></li>
+                    <li><a href="index.html#services">Nossos Serviços</a></li>
+                    <li><a href="info.html#faq-section">Perguntas Frequentes</a></li>
+                    <li><a href="info.html#terms-section">Termos de Uso</a></li>
+                    <li><a href="info.html#privacy-section">Política de Privacidade</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Suporte</h4>
+                <ul>
+                    <li><a href="help-center.html">Central de Ajuda</a></li>
+                    <li><a href="mailto:contato@fieldx.com.br">Contato</a></li>
+                    <li><a href="feedback.html">Feedback</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Recursos</h4>
+                <ul>
+                    <li><a href="index.html#cases">Blog</a></li>
+                    <li><a href="index.html#planting-tips">Dicas para Produtores</a></li>
+                    <li><a href="webinars.html">Webinars</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Field X. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript para o menu hamburguer responsivo (copiado do index.html)
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerMenu = document.querySelector('.hamburger-menu');
+            const navMenu = document.querySelector('.nav-menu');
+
+            hamburgerMenu.addEventListener('click', function() {
+                navMenu.classList.toggle('active');
+            });
+
+            document.querySelectorAll('.nav-menu a').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (window.innerWidth <= 768) {
+                        navMenu.classList.remove('active');
+                    }
+                });
+            });
+        });
+
+        // JavaScript para funcionalidade de FAQ (expandir/colapsar)
+        function toggleFaq(element) {
+            const answer = element.nextElementSibling; // Pega o parágrafo da resposta
+            const icon = element.querySelector('i'); // Pega o ícone
+
+            if (answer.classList.contains('open')) {
+                answer.classList.remove('open');
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                answer.classList.add('open');
+                icon.style.transform = 'rotate(90deg)';
+            }
+        }
+
+        // JavaScript para rolagem suave para seção se a URL tiver um hash
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.location.hash) {
+                const targetElement = document.querySelector(window.location.hash);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+<div class="footer-col">
+    <h4>Links Úteis</h4>
+    <ul>
+        <li><a href="#about">Sobre Nós</a></li> <li><a href="#services">Nossos Serviços</a></li> <li><a href="info.html#faq-section">Perguntas Frequentes</a></li>
+        <li><a href="info.html#terms-section">Termos de Uso</a></li>
+        <li><a href="info.html#privacy-section">Política de Privacidade</a></li>
+    </ul>
+</div>

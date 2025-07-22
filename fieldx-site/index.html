@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCVzs-WmjMkftkZEv3hw36RJ-cj6pQIu1o",
+            authDomain: "field-x-site.firebaseapp.com",
+            projectId: "field-x-site",
+            storageBucket: "field-x-site.firebasestorage.app",
+            messagingSenderId: "599230323320",
+            appId: "1:599230323320:web:b873d0d991ce10011d6b8d",
+            measurementId: "G-1KJR7DHBBL"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => {
+            console.log("Persistência de autenticação configurada para LOCAL.");
+        })
+        .catch((error) => {
+            console.error("Erro ao configurar persistência:", error);
+        });
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Field X - Inteligência que Cultiva Resultados</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos Globais e Variáveis CSS */
+        :root {
+            --primary-color: #4CAF50; /* Verde-claro */
+            --secondary-color: #2A3D66; /* Azul-profundo */
+            --light-gray: #F4F4F4; /* Cinza-claro */
+            --white-color: #FFFFFF; /* Branco puro */
+            --yellow-accent: #FFC107; /* Amarelo-dourado */
+            --text-color: #333; /* Cor padrão para texto */
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+            --header-height: 70px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--white-color);
+            scroll-behavior: smooth;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--primary-color);
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--secondary-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: var(--white-color);
+            padding: 12px 25px;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #388E3C; /* Tom mais escuro do verde */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #1A2C4A; /* Tom mais escuro do azul */
+        }
+
+        section {
+            padding: 80px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        section:nth-child(even) {
+            background-color: var(--light-gray);
+        }
+
+        /* --- 1.1. Cabeçalho (Header) --- */
+        .header {
+            background-color: var(--white-color);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+            padding: 10px 0;
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+        }
+
+        .header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .logo span {
+            color: var(--secondary-color);
+        }
+
+        .nav-menu ul {
+            list-style: none;
+            display: flex;
+        }
+
+        .nav-menu ul li {
+            margin-left: 30px;
+        }
+
+        .nav-menu ul li a {
+            color: var(--secondary-color);
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 5px;
+        }
+
+        .nav-menu ul li a::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .nav-menu ul li a:hover::after {
+            width: 100%;
+        }
+
+        .auth-buttons .btn {
+            margin-left: 15px;
+            padding: 10px 20px;
+        }
+
+        /* Menu Hamburguer para Mobile */
+        .hamburger-menu {
+            display: none;
+            cursor: pointer;
+            font-size: 1.8rem;
+            color: var(--secondary-color);
+        }
+
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: var(--header-height);
+                left: 0;
+                width: 100%;
+                background-color: var(--white-color);
+                box-shadow: var(--shadow);
+                padding: 20px 0;
+                align-items: center;
+                animation: slideDown 0.3s ease-out forwards;
+            }
+
+            .nav-menu.active {
+                display: flex;
+            }
+
+            .nav-menu ul {
+                flex-direction: column;
+                width: 100%;
+                text-align: center;
+            }
+
+            .nav-menu ul li {
+                margin: 15px 0;
+            }
+
+            .auth-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 20px;
+            }
+
+            .auth-buttons .btn {
+                margin: 0;
+                width: 80%;
+                text-align: center;
+            }
+
+            .hamburger-menu {
+                display: block;
+            }
+
+            @keyframes slideDown {
+                from { opacity: 0; transform: translateY(-20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        }
+
+        /* --- 1.2. Hero Section --- */
+        .hero-section {
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('img/fazenda.png') no-repeat center center/cover;
+            color: var(--white-color);
+            text-align: center;
+            padding: 150px 0;
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: var(--header-height); /* Para compensar o header fixo */
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            line-height: 1.2;
+            color: var(--white-color);
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 100px 0;
+            }
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+            .hero-content p {
+                font-size: 1rem;
+            }
+        }
+
+        /* --- 1.3. Seção "Sobre o Field X" --- */
+        .about-section {
+            text-align: center;
+        }
+
+        .about-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+
+        .about-section p {
+            max-width: 800px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #555;
+        }
+
+        /* --- 1.4. Seção "Nossos serviços" (Cards ilustrados) --- */
+        .services-section {
+            text-align: center;
+        }
+
+        .services-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+        }
+
+        .service-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .service-card {
+            background-color: var(--white-color);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .service-card i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .service-card h3 {
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+        }
+
+        .service-card p {
+            font-size: 1rem;
+            color: #666;
+        }
+        /* CORREÇÃO: Faltava o fechamento de uma div .service-card aqui */
+        /* Note: O seu código anterior tinha uma div 'service-card' que não estava fechada corretamente antes do próximo card.
+           Se essa div deveria ter todo o conteúdo abaixo dela, a estrutura de 'Nossos Serviços' estaria errada.
+           Assumi que cada 'service-card' deve ser independente. Removi o `</div>` extra e ajustei.
+           Se o layout de 'Nossos Serviços' estiver estranho, verifique as tags <div> nesta seção. */
+        /* --- 1.5. Seção "Casos reais" (blog/dicas) --- */
+
+
+        .case-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .case-card {
+            background-color: var(--white-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .case-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .case-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .case-card-content {
+            padding: 20px;
+        }
+
+        .case-card-content h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--secondary-color);
+        }
+
+        .case-card-content a {
+            display: inline-block;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .cases-section .btn {
+            margin-top: 50px;
+        }
+
+        /* --- 1.6. Seção "Planos" (destaque claro) --- */
+        .plans-section {
+            text-align: center;
+        }
+
+        .plans-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+        }
+
+        .plan-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+            align-items: stretch; /* Garante que os cards tenham a mesma altura */
+        }
+
+        .plan-card {
+            background-color: var(--white-color);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Empurra o botão para baixo */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .plan-card h3 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .plan-card .price {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .plan-card .price span {
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: #777;
+        }
+
+        .plan-card ul {
+            list-style: none;
+            margin-bottom: 30px;
+            flex-grow: 1; /* Permite que a lista cresça e ocupe o espaço */
+        }
+
+        .plan-card ul li {
+            margin-bottom: 10px;
+            font-size: 1rem;
+            color: #555;
+            display: flex;
+            align-items: center;
+        }
+
+        .plan-card ul li i {
+            color: var(--primary-color);
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .plan-card .btn {
+            width: 100%;
+            text-align: center;
+            margin-top: 20px; /* Garante espaçamento entre a lista e o botão */
+        }
+
+        .plans-section .compare-btn {
+            background-color: transparent;
+            color: var(--secondary-color);
+            border: 2px solid var(--secondary-color);
+            margin-top: 30px;
+            display: inline-block;
+        }
+
+        .plans-section .compare-btn:hover {
+            background-color: var(--secondary-color);
+            color: var(--white-color);
+            transform: translateY(-2px);
+        }
+
+        /* --- 1.7. Rodapé (Footer) --- */
+        .footer {
+            background-color: var(--secondary-color);
+            color: var(--white-color);
+            padding: 60px 0 30px;
+            text-align: center;
+        }
+
+        .footer .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .footer-col {
+            flex: 1;
+            min-width: 200px;
+            margin-bottom: 30px;
+        }
+
+        .footer-col h4 {
+            font-size: 1.3rem;
+            color: var(--white-color);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .footer-col h4::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -5px;
+            width: 50px;
+            height: 2px;
+            background-color: var(--primary-color);
+        }
+
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-col ul li a {
+            color: var(--white-color);
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer-col ul li a:hover {
+            opacity: 1;
+            color: var(--primary-color);
+        }
+
+        .social-links a {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.2);
+            margin: 0 10px 10px 0;
+            text-align: center;
+            line-height: 40px;
+            border-radius: 50%;
+            color: var(--white-color);
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            background-color: var(--primary-color);
+        }
+
+        /* CORREÇÃO: Removi a div extra aqui que estava antes do footer-bottom */
+        /* O footer-bottom deve ser a última parte do footer. */
+        .footer-bottom {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        @media (max-width: 768px) {
+            .footer .container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .footer-col {
+                min-width: unset;
+                width: 100%;
+                text-align: center;
+            }
+            .footer-col h4::after {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+        /* START OF MODAL STYLES - Agora no lugar correto, DENTRO do STYLE principal no HEAD */
+        /* Estilos do Modal */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1001; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: var(--white-color);
+            margin: auto;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow);
+            position: relative;
+            text-align: center;
+        }
+
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        .auth-toggle {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--light-gray);
+            padding-bottom: 10px;
+        }
+
+        .auth-toggle button {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: #777;
+            font-weight: 600;
+            transition: color 0.3s ease, border-bottom 0.3s ease;
+        }
+
+        .auth-toggle button.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        .auth-form {
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .auth-form.active {
+            display: flex;
+        }
+
+        .auth-form input {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            width: 100%;
+        }
+
+        .auth-form .btn {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .error-message {
+            color: #d32f2f; /* Vermelho para mensagens de erro */
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        /* END OF MODAL STYLES */
+        /* Estilos para a Seção de Dicas de Plantio */
+        /* Estilos para a Seção de Dicas de Plantio */
+.planting-tips-section {
+        background-color: var(--light-gray); /* Fundo suave */
+        text-align: center;
+    }
+
+    .planting-tips-section h2 {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        color: var(--secondary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .planting-tips-section h2 i {
+        margin-right: 15px;
+        color: var(--primary-color);
+    }
+
+    .planting-tips-section p {
+        max-width: 800px;
+        margin: 0 auto 50px auto;
+        font-size: 1.1rem;
+        color: #555;
+    }
+
+    .tips-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin-top: 40px;
+    }
+
+    .tip-card {
+        background-color: var(--white-color);
+        padding: 30px;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        text-align: left;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .tip-card:hover {
+        transform: translateY(-8px); /* Animação mais perceptível */
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2); /* Sombra mais forte */
+        cursor: pointer;
+    }
+
+    .tip-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+
+    .tip-card h3 {
+        font-size: 1.8rem;
+        color: var(--primary-color); /* Título da cultura em verde */
+        margin-bottom: 15px;
+        text-align: center;
+        border-bottom: 2px solid var(--light-gray);
+        padding-bottom: 10px;
+    }
+
+    .tip-card ul {
+        list-style: none;
+        margin-bottom: 20px;
+        flex-grow: 1; /* Faz a lista ocupar o espaço disponível */
+    }
+
+    .tip-card ul li {
+        margin-bottom: 10px;
+        font-size: 1rem;
+        color: #555;
+        display: flex;
+        align-items: flex-start;
+    }
+
+    .tip-card ul li i {
+        color: var(--secondary-color); /* Ícones das bullets em azul */
+        margin-right: 10px;
+        font-size: 1.1rem;
+        line-height: 1.6; /* Alinha o ícone com o texto */
+    }
+
+    .fieldx-tip {
+        background-color: #E8F5E9; /* Verde claro para a dica Field X */
+        color: var(--secondary-color);
+        padding: 15px;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border-left: 5px solid var(--primary-color);
+        margin-top: 20px;
+        text-align: left;
+    }
+
+    .fieldx-tip i {
+        color: var(--yellow-accent); /* Estrela amarela */
+        margin-right: 8px;
+    }
+
+    @media (max-width: 768px) {
+        .tips-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="container">
+            <a href="#" class="logo">Field<span>X</span></a>
+            <nav class="nav-menu">
+                <ul>
+                    <li><a href="#about">Sobre</a></li>
+                    <li><a href="#services">Serviços</a></li>
+                    <li><a href="#plans">Planos</a></li>
+                    <li><a href="#cases">Dicas</a></li>
+                    <li><a href="#cases">Blog</a></li>
+                </ul>
+            </nav>
+            <div class="auth-buttons">
+                <a href="#" class="btn btn-secondary">Entrar</a>
+                <a href="#" class="btn">Cadastrar</a>
+            </div>
+            <div class="hamburger-menu">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero-section">
+        <div class="container hero-content">
+            <h1>Transforme sua propriedade com inteligência de dados e IA no campo.</h1>
+            <p>Conecte sua fazenda com as tecnologias de monitoramento mais precisas do mercado e otimize seus resultados.</p>
+            <a href="#plans" class="btn">Comece agora – Planos a partir de R$197 por safra</a>
+        </div>
+    </section>
+
+    <section id="about" class="about-section">
+        <div class="container">
+            <h2>Sobre o Field X</h2>
+            <p>O Field X conecta sua fazenda com as tecnologias de monitoramento mais precisas do mercado. Dados de máquinas, clima, solo e produtividade em tempo real, com IA que aprende com sua lavoura. Nossa plataforma te ajuda a tomar decisões mais inteligentes, reduzir custos e aumentar seus lucros a cada safra.</p>
+        </div>
+    </section>
+
+    <section id="services" class="services-section">
+        <div class="container">
+            <h2>Nossos Serviços</h2>
+            <div class="service-cards">
+                <div class="service-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Relatórios de desempenho com IA</h3>
+                    <p>Análises detalhadas da sua lavoura com inteligência artificial para otimizar a produtividade.</p>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-cloud-sun-rain"></i>
+                    <h3>Clima e localização integrados</h3>
+                    <p>Previsões meteorológicas precisas e localização de talhões via OpenWeather e Google Maps.</p>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-gas-pump"></i>
+                    <h3>Economia de combustível e custo por talhão</h3>
+                    <p>Monitore e otimize o consumo de diesel e calcule o custo exato por área cultivada.</p>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-robot"></i>
+                    <h3>Consultoria automatizada</h3>
+                    <p>Receba recomendações inteligentes para decisões de plantio, colheita e manejo em tempo real.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="cases" class="cases-section">
+        <div class="container">
+            <h2>Casos Reais e Dicas de Sucesso</h2>
+            <div class="case-cards">
+                <div class="case-card">
+                    <img src="img/trator-economia.jpg" alt="Colheita de Milho em Fazenda Real">
+                    <div class="case-card-content">
+                        <h3>Como um produtor de Goianésia,GO economizou 32% usando o Field X no plantio de melancia</h3>
+                        <p>Descubra as estratégias e resultados impressionantes de otimização.</p>
+                        <a href="blog.html">Ler mais <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+                <div class="case-card">
+                    <img src="trator-economia.jpg" alt="Trator Economia">
+                    <div class="case-card-content">
+                        <h3>1. Tecnologia reduz até 10% nos custos com diesel </h3>
+                        <p>Veja como a análise de dados impactou diretamente nos custos operacionais.</p>
+                        <a href="blog.html">Ler mais <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+            <a href="blog.html" class="btn btn-secondary">Ver todas as histórias</a>
+        </div>
+    </section>
+
+    <section id="plans" class="plans-section">
+        <div class="container">
+            <h2>Escolha o Plano Ideal para Você</h2>
+            <div class="plan-cards">
+                <div class="plan-card">
+                    <h3>🌱 Field X Básico</h3>
+                    <div class="price">R$197 <span>/safra</span></div>
+                    <ul>
+                        <li><i class="fas fa-check-circle"></i> Acesso a dados de Clima local</li>
+                        <li><i class="fas fa-check-circle"></i> Relatórios de desempenho básicos</li>
+                        <li><i class="fas fa-check-circle"></i> Ferramenta de economia de combustível</li>
+                        <li><i class="fas fa-check-circle"></i> Suporte via chat</li>
+                    </ul>
+                     <a href="https://pag.ae/7_SUDDJG4" class="btn">Assinar Básico</a>
+                 </div>
+                <div class="plan-card">
+                    <h3>🌾 Field X Pro</h3>
+                    <div class="price">R$597 <span>/safra</span></div>
+                    <ul>
+                        <li><i class="fas fa-check-circle"></i> Tudo do Básico</li>
+                        <li><i class="fas fa-check-circle"></i> IA para otimização de produtividade</li>
+                        <li><i class="fas fa-check-circle"></i> Análise de solo e fertilidade</li>
+                        <li><i class="fas fa-check-circle"></i> Histórico de dados da fazenda</li>
+                        <li><i class="fas fa-check-circle"></i> Relatórios avançados personalizados</li>
+                    </ul>
+                    <a href="https://pag.ae/7_SUFFhm5" class="btn">Assinar Pro</a>
+                </div>
+                <div class="plan-card">
+                    <h3>🚀 Field X Max</h3>
+                    <div class="price">R$997 <span>/safra</span></div>
+                    <ul>
+                        <li><i class="fas fa-check-circle"></i> Tudo do Plano Pro</li>
+                        <li><i class="fas fa-check-circle"></i> Consultoria personalizada com especialistas</li>
+                        <li><i class="fas fa-check-circle"></i> Acesso a API sob demanda</li>
+                        <li><i class="fas fa-check-circle"></i> Monitoramento em tempo real (veículos/máquinas)</li>
+                        <li><i class="fas fa-check-circle"></i> Suporte prioritário 24/7</li>
+                    </ul>
+                    <a href="https://pag.ae/7_SUGnFb4" class="btn">Assinar Max</a>
+                </div>
+            </div>
+            <a href="https://pag.ae/7_SUGnFb4" class="btn compare-btn">Comprar planos</a>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-col">
+                <h4>Field X</h4>
+                <p>"Inteligência que cultiva resultados."</p>
+                <div class="social-links">
+                    <a href="https://www.instagram.com/agrox.tech?igsh=MXQwa3FzZTd1d2I3"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.linkedin.com/company/agrox-technology/?viewAsMember=true"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.linkedin.com/company/agrox-technology/?viewAsMember=true"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Links Úteis</h4>
+                <ul>
+                     <li><a href="#about">Sobre Nós</a></li>
+                <li><a href="#services">Nossos Serviços</a></li>
+                <li><a href="info.html#terms-section">Perguntas Frequentes</a></li>
+                <li><a href="info.html#terms-section">Termos de Uso</a></li>
+                <li><a href="info.html#privacy-section">Política de Privacidade</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Suporte</h4>
+            <ul>
+                <li><a href="help-center.html">Central de Ajuda</a></li>
+                <li><a href="agrox.tecnologia@gmail.com">Contato</a></li> <li><a href="feedback.html">Feedback</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Recursos</h4>
+            <ul>
+                <li><a href="#cases">Blog</a></li>
+                <li><a href="#planting-tips">Dicas para Produtores</a></li> <li><a href="webinars.html">Webinars</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Field X by AGROX. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Faça Login ou Cadastre-se</h2>
+            <div class="auth-toggle">
+                <button id="showLogin" class="active">Login</button>
+                <button id="showRegister">Cadastrar</button>
+            </div>
+
+            <form id="loginForm" class="auth-form active">
+                <input type="email" id="loginEmail" placeholder="E-mail" required>
+                <input type="password" id="loginPassword" placeholder="Senha" required>
+                <button type="submit" class="btn">Entrar</button>
+                <p id="loginError" class="error-message"></p>
+            </form>
+
+            <form id="registerForm" class="auth-form">
+                <input type="text" id="registerName" placeholder="Seu Nome" required>
+                <input type="text" id="registerCity" placeholder="Sua Cidade" required>
+                <input type="email" id="registerEmail" placeholder="E-mail" required>
+                <input type="password" id="registerPassword" placeholder="Senha (mín. 6 caracteres)" required>
+                <button type="submit" class="btn">Cadastrar</button>
+                <p id="registerError" class="error-message"></p>
+            </form>
+        </div>
+    </div>
+    <script>
+        // Variáveis para referenciar os campos de input do formulário (ADICIONADAS/CORRIGIDAS)
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const registerName = document.getElementById('registerName');
+        const registerCity = document.getElementById('registerCity');
+        const registerEmail = document.getElementById('registerEmail');
+        const registerPassword = document.getElementById('registerPassword');
+
+        const authModal = document.getElementById('authModal');
+        const closeButton = document.querySelector('.close-button');
+        const showLoginButton = document.getElementById('showLogin');
+        const showRegisterButton = document.getElementById('showRegister');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm'); // CORREÇÃO: era 'getElementById'
+        const loginError = document.getElementById('loginError');
+        const registerError = document.getElementById('registerError');
+
+        // Funções para mostrar/esconder o modal e alternar formulários
+        function openModal(formType = 'login') {
+            authModal.style.display = 'flex'; // Usar flex para centralizar
+            if (formType === 'login') {
+                showLoginForm();
+            } else {
+                showRegisterForm();
+            }
+        }
+
+        function closeModal() {
+            authModal.style.display = 'none';
+            loginError.textContent = ''; // Limpa mensagens de erro
+            registerError.textContent = '';
+        }
+
+        function showLoginForm() {
+            showLoginButton.classList.add('active');
+            showRegisterButton.classList.remove('active');
+            loginForm.classList.add('active');
+            registerForm.classList.remove('active');
+            loginError.textContent = '';
+            registerError.textContent = ''; // CORREÇÃO: Removi a linha duplicada 'loginError.textContent = '';'
+        }
+
+        function showRegisterForm() {
+            showRegisterButton.classList.add('active');
+            showLoginButton.classList.remove('active');
+            registerForm.classList.add('active');
+            loginForm.classList.remove('active');
+            loginError.textContent = '';
+            registerError.textContent = '';
+        }
+
+        // Event Listeners para botões do header e modal
+        document.querySelector('.header .btn-secondary').addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal('login');
+        });
+
+        document.querySelector('.header .btn:not(.btn-secondary)').addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal('register');
+        });
+
+        closeButton.addEventListener('click', closeModal);
+        showLoginButton.addEventListener('click', showLoginForm);
+        showRegisterButton.addEventListener('click', showRegisterForm);
+
+        // Fechar modal ao clicar fora
+        window.addEventListener('click', (event) => {
+            if (event.target === authModal) {
+                closeModal();
+            }
+        });
+
+        // Lógica de Autenticação Firebase
+        // Login de Usuário
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = loginEmail.value;
+            const password = loginPassword.value;
+            loginError.textContent = ''; // Limpa erros anteriores
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                closeModal(); // Fecha o modal
+                alert("Login bem-sucedido! Redirecionando para o dashboard...");
+                window.location.href = 'dashboard.html'; // Redireciona
+            } catch (error) {
+                console.error("Erro de Login:", error.code, error.message);
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                        loginError.textContent = 'E-mail ou senha inválidos.';
+                        break;
+                    case 'auth/invalid-email':
+                        loginError.textContent = 'Formato de e-mail inválido.';
+                        break;
+                    default:
+                        loginError.textContent = 'Erro ao fazer login. Tente novamente.';
+                }
+            }
+        });
+
+        // Cadastro de Usuário
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = registerName.value;
+            const city = registerCity.value;
+            const email = registerEmail.value;
+            const password = registerPassword.value;
+            registerError.textContent = ''; // Limpa erros anteriores
+
+            if (password.length < 6) {
+                registerError.textContent = 'A senha deve ter no mínimo 6 caracteres.';
+                return;
+            }
+
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                // Salvar nome e cidade no Firestore
+                await db.collection("users").doc(user.uid).set({
+                    name: name,
+                    city: city,
+                    email: email, // Opcional, o email já está no auth
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Atualizar o perfil do usuário no Auth (opcional, mas bom para displayName)
+                await user.updateProfile({
+                    displayName: name
+                });
+
+                closeModal(); // Fecha o modal
+                alert("Cadastro bem-sucedido! Redirecionando para o dashboard...");
+                window.location.href = 'dashboard.html'; // Redireciona
+            } catch (error) {
+                console.error("Erro de Cadastro:", error.code, error.message);
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        registerError.textContent = 'Este e-mail já está em uso.';
+                        break;
+                    case 'auth/invalid-email':
+                        registerError.textContent = 'Formato de e-mail inválido.';
+                        break;
+                    case 'auth/weak-password':
+                        registerError.textContent = 'A senha é muito fraca. Escolha uma mais forte.';
+                        break;
+                    default:
+                        registerError.textContent = 'Erro ao cadastrar. Tente novamente.';
+                }
+            }
+        });
+
+        // JavaScript para o menu hamburguer responsivo
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerMenu = document.querySelector('.hamburger-menu');
+            const navMenu = document.querySelector('.nav-menu');
+
+            hamburgerMenu.addEventListener('click', function() {
+                navMenu.classList.toggle('active');
+            });
+
+            document.querySelectorAll('.nav-menu a').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (window.innerWidth <= 768) {
+                        navMenu.classList.remove('active');
+                    }
+                });
+            });
+        });
+    </script>
+    </body>
+</html>

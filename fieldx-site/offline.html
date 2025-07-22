@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Field X - Offline</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4CAF50; /* Verde-claro */
+            --secondary-color: #2A3D66; /* Azul-profundo */
+            --light-gray: #F4F4F4; /* Cinza-claro */
+            --white-color: #FFFFFF; /* Branco puro */
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--light-gray);
+            text-align: center;
+            color: var(--text-color);
+            padding: 20px;
+        }
+
+        .offline-container {
+            background-color: var(--white-color);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .offline-container h1 {
+            font-family: 'Poppins', sans-serif;
+            color: var(--secondary-color);
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .offline-container p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #555;
+        }
+
+        .offline-container .logo {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .offline-container .logo span {
+            color: var(--secondary-color);
+        }
+
+        .offline-container .icon {
+            font-size: 5rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: var(--white-color);
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background-color: #388E3C; /* Tom mais escuro do verde */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <span class="logo">Field<span>X</span></span>
+        <i class="icon fas fa-wifi-slash"></i>
+        <h1>Parece que você está offline!</h1>
+        <p>Não se preocupe, o Field X está pronto para te ajudar mesmo sem conexão. Algumas funcionalidades podem estar limitadas até a internet retornar.</p>
+        <p>Tente se reconectar ou volte mais tarde.</p>
+        <a href="/" class="btn">Recarregar Página</a>
+    </div>
+</body>
+</html>

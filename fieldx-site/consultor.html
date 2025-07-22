@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroX - Painel Consultor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="services.js" defer></script>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2A3D66;
+            --light-gray: #F4F4F4;
+            --white-color: #FFFFFF;
+            --text-color: #333;
+            --shadow: 0 4px 8px rgba(0,0,0,0.1);
+            --border-radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--light-gray); color: var(--text-color); display: flex; flex-direction: column; min-height: 100vh; }
+        header { background: var(--white-color); padding: 15px 25px; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: space-between; }
+        header h2 { color: var(--secondary-color); font-family: 'Poppins', sans-serif; }
+        .main-content { flex-grow: 1; padding: 25px; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
+        .card { background: var(--white-color); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 20px; }
+        .card h3 { font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center; }
+        .card h3 i { margin-right: 10px; color: var(--primary-color); }
+        .card p, .card input, .card button, .card textarea, .card select { margin-bottom: 10px; }
+        .card input, .card textarea, .card select { padding: 8px; width: 100%; max-width: 300px; }
+        .card button { padding: 8px 15px; background: var(--primary-color); color: var(--white-color); border: none; border-radius: 5px; cursor: pointer; }
+        .card button:hover { background: #45a049; }
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .calendar div { padding: 10px; text-align: center; background: #f9f9f9; }
+        .calendar .header { background: var(--primary-color); color: var(--white-color); }
+        footer { background: var(--white-color); padding: 15px; text-align: center; box-shadow: var(--shadow); }
+        footer a, footer button { margin: 0 10px; text-decoration: none; color: var(--primary-color); background: none; border: none; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background: var(--white-color); padding: 20px; border-radius: var(--border-radius); max-width: 500px; width: 90%; }
+        .modal-content h3 { margin-bottom: 15px; }
+        .modal-content button { margin-top: 10px; }
+        @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } }
+        .calendar .has-action { 
+    background: #d4edda; 
+    font-weight: bold; 
+}
+    </style>
+</head>
+<body>
+<header>
+    <h2>AgroX - Painel Consultor</h2>
+    <div>
+        <span id="consultor-name">Consultor AgroX</span>
+        <select id="client-selector"></select>
+        <button id="back-btn">Voltar ao Produtor</button>
+        <button id="logout-btn">Sair</button>
+    </div>
+</header>
+<main class="main-content">
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3><i class="fas fa-user"></i> Informações do Cliente</h3>
+            <p id="client-info">Nome: João Silva<br>Fazenda: Fazenda Sol<br>Área: 100 ha</p>
+        </div>
+        <div class="card">
+    <h3><i class="fas fa-calendar-check"></i> Calendário de Ações</h3>
+    <div id="calendar" class="calendar"></div>
+    <button onclick="openActionModal()">Adicionar Ação</button>
+</div>
+<div id="action-modal" class="modal">
+    <div class="modal-content">
+        <h3>Adicionar Ação</h3>
+        <input id="action-date" type="date">
+        <input id="action-description" placeholder="Descrição da Ação (ex: Reunião, Plantio)" type="text">
+        <button onclick="addAction()">Salvar</button>
+        <button onclick="closeActionModal()">Cancelar</button>
+    </div>
+</div>
+
+            <div class="card">
+                <h3><i class="fas fa-map-marker-alt"></i> Mapa de Propriedades</h3>
+                <div id="map" style="height: 300px;"></div>
+            </div>
+<!-- Adicionar o card dentro de uma seção existente, como #dashboard-overview ou #planning-section -->
+<section id="requests-section" style="display: none;">
+    <div class="card">
+        <h3><i class="fas fa-list"></i> Solicitações Recentes</h3>
+        <ul id="requests-list"></ul>
+    </div>
+</section>
+
+
+<script>
+    // Simula o armazenamento de solicitações no localStorage
+    let requests = JSON.parse(localStorage.getItem('requests')) || [];
+
+    // Função para carregar e exibir solicitações
+    function loadRequests() {
+        const requestsSection = document.getElementById('requests-section');
+        const requestsList = document.getElementById('requests-list');
+
+        if (requests.length > 0) {
+            requestsSection.style.display = 'block'; // Exibe o card se houver solicitações
+            requestsList.innerHTML = ''; // Limpa a lista
+            requests.forEach((request, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${request.title} - ${new Date(request.date).toLocaleString('pt-BR')} - Status: ${request.status}`;
+                requestsList.appendChild(li);
+            });
+        } else {
+            requestsSection.style.display = 'none'; // Oculta o card se não houver solicitações
+        }
+    }
+
+    // Função para adicionar uma solicitação de exemplo (pode ser chamada por um botão ou API)
+    function addRequest(title, status = 'Pendente') {
+        const newRequest = {
+            title: title,
+            date: new Date().toISOString(),
+            status: status
+        };
+        requests.unshift(newRequest);
+        localStorage.setItem('requests', JSON.stringify(requests));
+        loadRequests();
+    }
+
+    // Exemplo: Adicionar uma solicitação ao carregar a página (para teste)
+    window.onload = () => {
+        loadUserProfile();
+        renderProductivityChart();
+        // Adiciona uma solicitação de exemplo às 07:45 PM -03 de 21/07/2025
+        if (requests.length === 0) {
+            addRequest('Análise de Solo', 'Pendente');
+        }
+        loadRequests();
+    };
+
+    // Exemplo: Botão para adicionar solicitação (opcional)
+    document.getElementById('add-request-btn')?.addEventListener('click', () => {
+        const title = prompt('Digite o título da solicitação:');
+        if (title) addRequest(title);
+    });
+</script>
+            <div class="card">
+                <h3><i class="fas fa-chart-bar"></i> Análise de Solo</h3>
+                <canvas id="soilAnalysisChart"></canvas>
+                <button onclick="downloadSoilReport()">Baixar Relatório</button>
+            </div>
+            <div class="card">
+                <h3><i class="fas fa-calculator"></i> Calculadora de Adubação</h3>
+                <input id="area" placeholder="Área (ha)" type="number" step="0.01">
+                <input id="nitrogen" placeholder="Nitrogênio (kg/ha)" type="number" step="0.01">
+                <input id="phosphorus" placeholder="Fósforo (kg/ha)" type="number" step="0.01">
+                <input id="potassium" placeholder="Potássio (kg/ha)" type="number" step="0.01">
+                <button onclick="calculateFertilization()">Calcular</button>
+                <p id="calc-output"></p>
+             </div>
+
+<div class="card">
+    <h3><i class="fas fa-seedling"></i> Planejador de Cultivo</h3>
+    <select id="crop-type" style="padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc;">
+        <option value="Milho">Milho</option>
+        <option value="Soja">Soja</option>
+        <option value="Sorgo">sorgo</option>
+        <option value="melancia">melancia</option>
+    </select>
+    <!-- Coloque após o card "Planejador de Cultivo" no .dashboard-grid -->
+<div class="card">
+    <h3><i class="fas fa-farm"></i> Painel de Controle Multi-Fazenda</h3>
+    <select id="farm-filter" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 10px;">
+        <option value="all">Todas</option>
+        <option value="Fazenda Sol">Fazenda Sol</option>
+        <option value="Fazenda Lua">Fazenda Lua</option>
+    </select>
+    <!-- Coloque após o card "Painel de Controle Multi-Fazenda" no .dashboard-grid -->
+<div class="card">
+    <h3><i class="fas fa-seedling"></i> Recomendações Agronômicas</h3>
+    <p id="client-recommendation" style="margin-bottom: 10px;">Selecione um cliente para ver recomendações.</p>
+    <button id="analyze-btn" class="btn" style="margin-top: 10px;">Analisar</button>
+</div>
+
+
+<!-- Cole no final do <script> -->
+<script>
+    function loadRecommendations() {
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const recommendationOutput = document.getElementById('client-recommendation');
+
+        analyzeBtn.addEventListener('click', () => {
+            if (!selectedClient) {
+                recommendationOutput.textContent = 'Selecione um cliente para análise.';
+                return;
+            }
+            const soil = selectedClient.soilData;
+            let recommendation = `Recomendações para ${selectedClient.farm}:\n`;
+            if (soil.nitrogen < 50) recommendation += '- Aplicar 50 kg/ha de nitrogênio.\n';
+            if (soil.phosphorus < 30) recommendation += '- Aplicar 30 kg/ha de fósforo.\n';
+            if (soil.potassium < 40) recommendation += '- Aplicar 40 kg/ha de potássio.\n';
+            recommendation += `Data: ${new Date().toLocaleString('pt-BR')}`;
+            recommendationOutput.textContent = recommendation || 'Solo em boas condições.';
+        });
+    }
+
+    window.onload = () => {
+        loadConsultorDashboard();
+        loadFarmPanel();
+        loadRecommendations();
+    };
+</script>
+
+    <select id="culture-filter" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 10px;">
+        <option value="all">Todas Culturas</option>
+        <option value="Soja">Soja</option>
+        <option value="Milho">Milho</option>
+    </select>
+    <ul id="farm-list" style="list-style: none; padding: 0; max-height: 200px; overflow-y: auto;"></ul>
+    <button id="generate-report-btn" class="btn" style="margin-top: 10px;">Gerar Relatório</button>
+    <p id="report-output" style="margin-top: 10px;"></p>
+</div>
+
+
+<!-- Coloque dentro do .dashboard-grid no <main class="main-content"> -->
+<div class="card" style="grid-column: span 1;">
+    <h3><i class="fas fa-farm"></i> Painel de Controle Multi-Fazenda</h3>
+    <select id="farm-filter" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 10px; width: 100%;">
+        <option value="all">Todas</option>
+        <option value="Fazenda Sol">Fazenda Sol</option>
+        <option value="Fazenda Lua">Fazenda Lua</option>
+    </select>
+    <select id="culture-filter" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 10px; width: 100%;">
+        <option value="all">Todas Culturas</option>
+        <option value="Soja">Soja</option>
+        <option value="Milho">Milho</option>
+    </select>
+    <ul id="farm-list" style="list-style: none; padding: 0; max-height: 200px; overflow-y: auto; margin-bottom: 10px;"></ul>
+    <button id="generate-report-btn" style="width: 100%; padding: 8px 15px; background: var(--primary-color); color: var(--white-color); border: none; border-radius: 5px; cursor: pointer;">Gerar Relatório</button>
+    <p id="report-output" style="margin-top: 10px; color: var(--secondary-color);"></p>
+</div>
+
+<!-- Cole no final do <script> -->
+<script>
+    function loadFarmPanel() {
+        const farmList = document.getElementById('farm-list');
+        const farmFilter = document.getElementById('farm-filter');
+        const cultureFilter = document.getElementById('culture-filter');
+
+        function updateFarmList() {
+            farmList.innerHTML = '';
+            clientsDB.filter(client => 
+                (farmFilter.value === 'all' || client.farm === farmFilter.value) &&
+                (cultureFilter.value === 'all' || (client.soilData.culture || '').toLowerCase() === cultureFilter.value.toLowerCase())
+            ).forEach(client => {
+                const li = document.createElement('li');
+                li.style.padding = '8px';
+                li.style.borderBottom = '1px solid #eee';
+                li.textContent = `${client.farm} (Produtor: ${client.name}, Área: ${client.area} ha, Tipo Solo: ${client.soilData.type})`;
+                li.style.color = 'var(--secondary-color)';
+                farmList.appendChild(li);
+            });
+        }
+
+        farmFilter.addEventListener('change', updateFarmList);
+        cultureFilter.addEventListener('change', updateFarmList);
+
+        document.getElementById('generate-report-btn').addEventListener('click', () => {
+            const filteredClients = clientsDB.filter(client => 
+                (farmFilter.value === 'all' || client.farm === farmFilter.value) &&
+                (cultureFilter.value === 'all' || (client.soilData.culture || '').toLowerCase() === cultureFilter.value.toLowerCase())
+            );
+            const report = `Relatório Multi-Fazenda - ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}\n${filteredClients.map(c => `${c.farm}: ${c.area} ha, ${c.soilData.type}`).join('\n')}`;
+            document.getElementById('report-output').textContent = filteredClients.length > 0 ? report : 'Nenhum cliente encontrado com os filtros aplicados.';
+        });
+
+        updateFarmList();
+    }
+
+    window.onload = () => {
+        loadConsultorDashboard();
+        loadFarmPanel();
+    };
+</script>
+
+<!-- Coloque dentro de #multi-farm-panel, no <div class="dashboard-grid">, após o primeiro card -->
+<div class="card">
+    <h3><i class="fas fa-seedling"></i> Recomendações Agronômicas</h3>
+    <select id="farm-select" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 10px;">
+        <option value="fazenda1">Fazenda 1</option>
+        <option value="fazenda2">Fazenda 2</option>
+    </select>
+    <!-- Coloque após o card "Recomendações Agronômicas" no .dashboard-grid -->
+<div class="card">
+    <h3><i class="fas fa-file-export"></i> Relatórios Avançados</h3>
+    <select id="report-type" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 10px;">
+        <option value="productivity">Produtividade</option>
+        <option value="costs">Custos</option>
+    </select>
+    <button id="export-report-btn" class="btn" style="margin-top: 10px;">Exportar</button>
+    <p id="export-output" style="margin-top: 10px;"></p>
+</div>
+
+<!-- Cole no final do <script> -->
+<script>
+    function loadExportReports() {
+        document.getElementById('export-report-btn').addEventListener('click', () => {
+            if (!selectedClient) {
+                document.getElementById('export-output').textContent = 'Selecione um cliente para gerar o relatório.';
+                return;
+            }
+            const type = document.getElementById('report-type').value;
+            const report = `
+Relatório ${type === 'productivity' ? 'Produtividade' : 'Custos'} - ${selectedClient.farm}
+Data: ${new Date().toLocaleString('pt-BR')}
+${type === 'productivity' ? `Produtividade Estimada: ${selectedClient.area * 5} ton/ha` : `Custo Estimado: R$ ${selectedClient.soilData.cost * selectedClient.area}`}
+            `;
+            const blob = new Blob([report], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `relatorio_${type}_${selectedClient.farm}.txt`;
+            link.textContent = 'Clique para baixar';
+            document.getElementById('export-output').innerHTML = report + '<br>';
+            document.getElementById('export-output').appendChild(link);
+        });
+    }
+
+    window.onload = () => {
+        loadConsultorDashboard();
+        loadFarmPanel();
+        loadRecommendations();
+        loadExportReports();
+    };
+</script>
+
+    <button id="analyze-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Analisar</button>
+    <p id="recommendation-output" style="margin-top: 10px; color: #2A3D66;"></p>
+</div>
+
+<!-- Cole no final do <script> -->
+<script>
+    function loadRecommendations() {
+        document.getElementById('analyze-btn').addEventListener('click', () => {
+            const farm = document.getElementById('farm-select').value;
+            // Simulação de IA (pode ser expandida com dados reais)
+            const recommendations = {
+                'fazenda1': 'Aplicar 50 kg/ha de nitrogênio e monitorar umidade.',
+                'fazenda2': 'Usar pesticida contra pragas e ajustar irrigação.'
+            };
+            document.getElementById('recommendation-output').textContent = recommendations[farm] || 'Nenhuma recomendação disponível.';
+        });
+    }
+
+    window.onload = () => {
+        loadUserProfile();
+        renderProductivityChart();
+        loadActivities();
+        loadForumPosts();
+        loadChatMessages();
+        loadProfiles();
+        loadFarmPanel();
+        loadRecommendations();
+    };
+</script>
+<!-- Coloque dentro de #multi-farm-panel, no <div class="dashboard-grid">, após o segundo card -->
+<div class="card">
+    <h3><i class="fas fa-file-export"></i> Relatórios Avançados</h3>
+    <select id="report-type" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 10px;">
+        <option value="productivity">Produtividade</option>
+        <option value="costs">Custos</option>
+    </select>
+    <button id="export-report-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Exportar</button>
+    <p id="export-output" style="margin-top: 10px;"></p>
+</div>
+
+<!-- Cole no final do <script> -->
+<script>
+    function loadExportReports() {
+        document.getElementById('export-report-btn').addEventListener('click', () => {
+            const type = document.getElementById('report-type').value;
+            const farms = JSON.parse(localStorage.getItem('farms')) || [];
+            let reportContent = `Relatório ${type === 'productivity' ? 'Produtividade' : 'Custos'} - ${new Date().toLocaleString('pt-BR')}\n`;
+            farms.forEach(farm => {
+                reportContent += `${farm.name}: ${type === 'productivity' ? `${farm.productivity} ton/ha` : 'R$ 1000'}\n`;
+            });
+
+            const blob = new Blob([reportContent], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `relatorio_${type}_${new Date().toISOString().slice(0, 10)}.txt`;
+            link.textContent = 'Clique para baixar';
+            document.getElementById('export-output').innerHTML = reportContent + '<br>';
+            document.getElementById('export-output').appendChild(link);
+        });
+    }
+
+    window.onload = () => {
+        loadUserProfile();
+        renderProductivityChart();
+        loadActivities();
+        loadForumPosts();
+        loadChatMessages();
+        loadProfiles();
+        loadFarmPanel();
+        loadRecommendations();
+        loadExportReports();
+    };
+</script>
+<!-- Coloque dentro de #multi-farm-panel, no <div class="dashboard-grid">, após o terceiro card -->
+<div class="card">
+    <h3><i class="fas fa-tasks"></i> Gestão de Tarefas</h3>
+    <input type="text" id="task-input" placeholder="Tarefa (ex.: Aplique 50 kg/ha)" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 70%; margin-bottom: 10px;">
+    <button id="add-task-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Adicionar</button>
+    <ul id="task-list" style="list-style: none; padding: 0; max-height: 200px; overflow-y: auto;"></ul>
+</div>
+
+<!-- Cole no final do <script> -->
+<script>
+    function loadTasks() {
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        const taskList = document.getElementById('task-list');
+        taskList.innerHTML = '';
+
+        tasks.forEach((task, index) => {
+            const li = document.createElement('li');
+            li.style.padding = '8px';
+            li.style.borderBottom = '1px solid #eee';
+            li.innerHTML = `<input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${index})"> ${task.description} <small>(${task.completed ? 'Concluído' : 'Pendente'})</small>`;
+            li.style.color = '#2A3D66';
+            taskList.appendChild(li);
+        });
+    }
+
+    function toggleTask(index) {
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        tasks[index].completed = !tasks[index].completed;
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        loadTasks();
+    }
+
+    document.getElementById('add-task-btn').addEventListener('click', () => {
+        const description = document.getElementById('task-input').value.trim();
+        if (description) {
+            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            tasks.push({ description: description, completed: false });
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            document.getElementById('task-input').value = '';
+            loadTasks();
+        }
+    });
+
+    window.onload = () => {
+        loadUserProfile();
+        renderProductivityChart();
+        loadActivities();
+        loadForumPosts();
+        loadChatMessages();
+        loadProfiles();
+        loadFarmPanel();
+        loadRecommendations();
+        loadExportReports();
+        loadTasks();
+    };
+</script>
+<!-- Coloque como nova seção após #multi-farm-panel -->
+<section id="consulting-section">
+    <h2><i class="fas fa-user-md"></i> Ferramentas de Consultoria</h2>
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3><i class="fas fa-graduation-cap"></i> Treinamento Online</h3>
+            <button id="start-training-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Iniciar Módulo</button>
+            <p id="training-output" style="margin-top: 10px;"></p>
+        </div>
+        <div class="card">
+            <h3><i class="fas fa-tractor"></i> Integração de Equipamentos</h3>
+            <input type="text" id="equipment-data" placeholder="Dados do Equipamento" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 70%; margin-bottom: 10px;">
+            <button id="sync-equipment-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Sincronizar</button>
+            <p id="equipment-output" style="margin-top: 10px;"></p>
+        </div>
+        <div class="card">
+            <h3><i class="fas fa-video"></i> Consultoria Virtual</h3>
+            <input type="text" id="consult-message" placeholder="Mensagem para produtor" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 70%; margin-bottom: 10px;">
+            <button id="send-consult-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Enviar</button>
+            <div id="consult-history" style="margin-top: 10px; max-height: 100px; overflow-y: auto;"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Cole no final do <script> -->
+<script>
+    function loadConsultingTools() {
+        // Treinamento
+        document.getElementById('start-training-btn').addEventListener('click', () => {
+            document.getElementById('training-output').textContent = 'Módulo iniciado: Agricultura Regenerativa (1 crédito)';
+        });
+
+        // Integração de Equipamentos
+        document.getElementById('sync-equipment-btn').addEventListener('click', () => {
+            const data = document.getElementById('equipment-data').value.trim();
+            document.getElementById('equipment-output').textContent = data ? `Dados sincronizados: ${data}` : 'Nenhum dado inserido.';
+        });
+
+        // Consultoria Virtual
+        document.getElementById('send-consult-btn').addEventListener('click', () => {
+            const message = document.getElementById('consult-message').value.trim();
+            if (message) {
+                let history = JSON.parse(localStorage.getItem('consultHistory')) || [];
+                history.push({ user: userData.username || 'Consultor', message: message, timestamp: new Date().toISOString() });
+                localStorage.setItem('consultHistory', JSON.stringify(history));
+                document.getElementById('consult-message').value = '';
+                loadConsultHistory();
+            }
+        });
+
+        function loadConsultHistory() {
+            let history = JSON.parse(localStorage.getItem('consultHistory')) || [];
+            const consultHistory = document.getElementById('consult-history');
+            consultHistory.innerHTML = history.map(h => `<p><strong>${h.user}</strong>: ${h.message} <small>(${new Date(h.timestamp).toLocaleString('pt-BR')})</small></p>`).join('');
+        }
+    }
+
+    window.onload = () => {
+        loadUserProfile();
+        renderProductivityChart();
+        loadActivities();
+        loadForumPosts();
+        loadChatMessages();
+        loadProfiles();
+        loadFarmPanel();
+        loadRecommendations();
+        loadExportReports();
+        loadTasks();
+        loadSatelliteAnalysis();
+        loadConsultingTools();
+    };
+</script>
+<!-- Coloque após #consulting-section, antes do fechamento de <main> -->
+<section id="shared-features">
+    <h2><i class="fas fa-sync-alt"></i> Ferramentas Compartilhadas</h2>
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3><i class="fas fa-trophy"></i> Gamificação</h3>
+            <p id="gamification-score" style="font-size: 1.1rem; color: #2A3D66;">Pontos: 0</p>
+            <button id="earn-points-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Ganhar Pontos</button>
+        </div>
+        <div class="card">
+            <h3><i class="fas fa-chart-line"></i> Previsão de Safras</h3>
+            <p id="yield-forecast" style="margin-top: 10px; color: #2A3D66;"></p>
+            <button id="forecast-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Prever</button>
+        </div>
+        <div class="card">
+            <h3><i class="fas fa-leaf"></i> Sustentabilidade</h3>
+            <p id="sustainability-metrics" style="margin-top: 10px; color: #2A3D66;">Carbono: 0 kg, Água: 0 L</p>
+            <button id="update-sustainability-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Atualizar</button>
+        </div>
+        <div class="card">
+            <h3><i class="fas fa-bell"></i> Alertas</h3>
+            <p id="alerts-output" style="margin-top: 10px; color: #2A3D66;"></p>
+        </div>
+        <div class="card">
+            <h3><i class="fas fa-download"></i> Exportação de Dados</h3>
+            <button id="export-data-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Exportar</button>
+            <p id="export-data-output" style="margin-top: 10px;"></p>
+        </div>
+        <div class="card">
+            <h3><i class="fas fa-globe"></i> Suporte Multilíngue</h3>
+            <select id="language-select" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 10px;">
+                <option value="pt">Português</option>
+                <option value="es">Español</option>
+                <option value="en">English</option>
+            </select>
+            <p id="language-output" style="margin-top: 10px; color: #2A3D66;">Idioma: Português</p>
+        </div>
+        <div class="card">
+            <h3><i class="fas fa-history"></i> Histórico Anual</h3>
+            <canvas id="annual-chart"></canvas>
+        </div>
+        <div class="card">
+            <h3><i class="fas fa-shield-alt"></i> Backup</h3>
+            <button id="backup-btn" class="btn" style="padding: 8px 15px; background-color: #4CAF50; color: #FFFFFF; border: none; border-radius: 5px;">Fazer Backup</button>
+            <p id="backup-output" style="margin-top: 10px;"></p>
+        </div>
+    </div>
+</section>
+
+<!-- Cole no final do <script> -->
+<script>
+    function loadSharedFeatures() {
+        // Gamificação
+        let score = parseInt(localStorage.getItem('gamificationScore')) || 0;
+        document.getElementById('gamification-score').textContent = `Pontos: ${score}`;
+        document.getElementById('earn-points-btn').addEventListener('click', () => {
+            score += 10;
+            localStorage.setItem('gamificationScore', score);
+            document.getElementById('gamification-score').textContent = `Pontos: ${score}`;
+        });
+
+        // Previsão de Safras
+        document.getElementById('forecast-btn').addEventListener('click', () => {
+            const yieldForecast = Math.random() * 6 + 4; // Simulação
+            document.getElementById('yield-forecast').textContent = `Previsão de Yield: ${yieldForecast.toFixed(1)} ton/ha`;
+        });
+
+        // Sustentabilidade
+        document.getElementById('update-sustainability-btn').addEventListener('click', () => {
+            const carbon = Math.random() * 100;
+            const water = Math.random() * 1000;
+            document.getElementById('sustainability-metrics').textContent = `Carbono: ${carbon.toFixed(1)} kg, Água: ${water.toFixed(1)} L`;
+        });
+
+        // Alertas
+        setInterval(() => {
+            const alert = Math.random() > 0.7 ? 'Alerta: Praga detectada!' : '';
+            document.getElementById('alerts-output').textContent = alert || 'Sem alertas.';
+            document.getElementById('alerts-output').style.color = alert ? '#d32f2f' : '#4CAF50';
+        }, 5000);
+
+        // Exportação de Dados
+        document.getElementById('export-data-btn').addEventListener('click', () => {
+            const data = 'Dados exportados: Produtividade 5.0 ton/ha';
+            const blob = new Blob([data], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `dados_fieldx_${new Date().toISOString().slice(0, 10)}.txt`;
+            link.textContent = 'Clique para baixar';
+            document.getElementById('export-data-output').innerHTML = data + '<br>';
+            document.getElementById('export-data-output').appendChild(link);
+        });
+
+        // Suporte Multilíngue
+        document.getElementById('language-select').addEventListener('change', (e) => {
+            const translations = { pt: 'Português', es: 'Español', en: 'English' };
+            document.getElementById('language-output').textContent = `Idioma: ${translations[e.target.value]}`;
+        });
+
+        // Histórico Anual
+        const ctx = document.getElementById('annual-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: { labels: ['2023', '2024', '2025'], datasets: [{ label: 'Produtividade', data: [4.5, 4.8, 5.0], borderColor: '#4CAF50', tension: 0.1 }] },
+            options: { scales: { y: { beginAtZero: true } } }
+        });
+
+        // Backup
+        document.getElementById('backup-btn').addEventListener('click', () => {
+            const data = JSON.stringify({ farms: localStorage.getItem('farms') });
+            const blob = new Blob([data], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `backup_fieldx_${new Date().toISOString().slice(0, 10)}.txt`;
+            link.textContent = 'Clique para baixar';
+            document.getElementById('backup-output').innerHTML = 'Backup realizado com sucesso!<br>';
+            document.getElementById('backup-output').appendChild(link);
+        });
+    }
+
+    window.onload = () => {
+        loadUserProfile();
+        renderProductivityChart();
+        loadActivities();
+        loadForumPosts();
+        loadChatMessages();
+        loadProfiles();
+        loadFarmPanel();
+        loadRecommendations();
+        loadExportReports();
+        loadTasks();
+        loadSatelliteAnalysis();
+        loadConsultingTools();
+        loadSharedFeatures();
+    };
+</script>
+<!-- Coloque dentro de #dashboard-overview, após os cards existentes -->
+<div class="card" style="background-color: #F4F4F4; text-align: center;">
+    <h3 style="color: #2A3D66;">Foco em Pequenos Produtores</h3>
+    <p style="color: #555;">Plano gratuito com ferramentas essenciais para você começar!</p>
+</div>
+<div class="card" style="background-color: #F4F4F4; text-align: center;">
+    <h3 style="color: #2A3D66;">Design Localizado</h3>
+    <p style="color: #555;">Adaptado para culturas como soja e cana-de-açúcar.</p>
+</div>
+<div class="card" style="background-color: #F4F4F4; text-align: center;">
+    <h3 style="color: #2A3D66;">Parcerias Locais</h3>
+    <p style="color: #555;">Descontos com cooperativas parceiras.</p>
+</div>
+
+    <input id="fertilizer-n-content" type="number" value="20" min="1" max="100" style="padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc;">
+    <label for="fertilizer-n-content" style="font-size: 0.8rem; color: #555;">Teor de Nitrogênio no adubo (%)</label>
+    <input id="fertilizer-p-content" type="number" value="5" min="1" max="100" style="padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc;">
+    <label for="fertilizer-p-content" style="font-size: 0.8rem; color: #555;">Teor de Fósforo no adubo (%)</label>
+    <input id="fertilizer-k-content" type="number" value="15" min="1" max="100" style="padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc;">
+    <label for="fertilizer-k-content" style="font-size: 0.8rem; color: #555;">Teor de Potássio no adubo (%)</label>
+    <button onclick="planCrop()" style="padding: 8px 15px; background: var(--primary-color); color: var(--white-color); border: none; border-radius: 5px; cursor: pointer;">Planejar</button>
+    <p id="plan-result" style="margin-top: 10px;"></p>
+    <p style="font-size: 0.9rem; margin-top: 10px;">
+        <strong>Valores ideais recomendados (kg/ha):</strong><br>
+        Milho: Nitrogênio 100, Fósforo 60, Potássio 80<br>
+        Soja: Nitrogênio 30, Fósforo 45, Potássio 65
+    </p>
+</div>
+<script>
+function planCrop() {
+    if (!selectedClient) {
+        document.getElementById('plan-result').textContent = 'Selecione um cliente antes de planejar.';
+        return;
+    }
+    
+    const cropType = document.getElementById('crop-type').value;
+    const fertilizerNContent = parseFloat(document.getElementById('fertilizer-n-content').value);
+    const fertilizerPContent = parseFloat(document.getElementById('fertilizer-p-content').value);
+    const fertilizerKContent = parseFloat(document.getElementById('fertilizer-k-content').value);
+    
+    if (isNaN(fertilizerNContent) || isNaN(fertilizerPContent) || isNaN(fertilizerKContent) || fertilizerNContent <= 0 || fertilizerPContent <= 0 || fertilizerKContent <= 0) {
+        document.getElementById('plan-result').textContent = 'Insira teores de adubo válidos (maiores que 0).';
+        return;
+    }
+    
+    // Valores ideais reais (kg/ha) para a cultura selecionada
+    const idealValues = {
+        Milho: { nitrogen: 100, phosphorus: 60, potassium: 80 },
+        Soja: { nitrogen: 30, phosphorus: 45, potassium: 65 }
+    };
+    
+    // Dados reais do cliente
+    const soilData = selectedClient.soilData;
+    const area = selectedClient.area;
+    
+    // Calcula deficiências (kg/ha)
+    const nDeficit = Math.max(0, idealValues[cropType].nitrogen - (soilData.nitrogen || 0));
+    const pDeficit = Math.max(0, idealValues[cropType].phosphorus - (soilData.phosphorus || 0));
+    const kDeficit = Math.max(0, idealValues[cropType].potassium - (soilData.potassium || 0));
+    
+    // Calcula adubo necessário por hectare e total (kg)
+    const nFertilizerPerHa = nDeficit / (fertilizerNContent / 100);
+    const pFertilizerPerHa = pDeficit / (fertilizerPContent / 100);
+    const kFertilizerPerHa = kDeficit / (fertilizerKContent / 100);
+    const nFertilizerTotal = nFertilizerPerHa * area;
+    const pFertilizerTotal = pFertilizerPerHa * area;
+    const kFertilizerTotal = kFertilizerPerHa * area;
+    
+    // Data de plantio real para 2025
+    const plantingDate = cropType === 'Milho' ? '2025-10-01' : '2025-11-01';
+    
+    // Resultado do plano
+    const plan = `
+Planejamento para ${cropType} (${area} ha):
+- Nitrogênio: ${nDeficit.toFixed(2)} kg/ha necessário, usar ${nFertilizerPerHa.toFixed(2)} kg/ha (${nFertilizerTotal.toFixed(2)} kg total).
+- Fósforo: ${pDeficit.toFixed(2)} kg/ha necessário, usar ${pFertilizerPerHa.toFixed(2)} kg/ha (${pFertilizerTotal.toFixed(2)} kg total).
+- Potássio: ${kDeficit.toFixed(2)} kg/ha necessário, usar ${kFertilizerPerHa.toFixed(2)} kg/ha (${kFertilizerTotal.toFixed(2)} kg total).
+- Data de plantio: ${plantingDate}.
+    `;
+    document.getElementById('plan-result').textContent = plan;
+    
+    // Salvar no recommendationsDB
+    const recommendation = `Planejamento de Cultivo para ${selectedClient.farm} (${cropType}, ${area} ha): ${nFertilizerTotal.toFixed(2)} kg de adubo N (${fertilizerNContent}%), ${pFertilizerTotal.toFixed(2)} kg de adubo P (${fertilizerPContent}%), ${kFertilizerTotal.toFixed(2)} kg de adubo K (${fertilizerKContent}%). Plantio em ${plantingDate}.`;
+    recommendationsDB.push({ clientEmail: selectedClient.email, recommendation, date: new Date().toISOString() });
+    localStorage.setItem('recommendationsDB', JSON.stringify(recommendationsDB));
+}
+</script>
+
+            <div class="card">
+                <h3><i class="fas fa-file-alt"></i> Recomendações</h3>
+                <textarea id="recommendation-input" placeholder="Digite as recomendações"></textarea>
+                <button onclick="saveRecommendation()">Salvar Recomendações</button>
+                <p id="recommendation-status"></p>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <a href="https://wa.me/5564999494453" target="_blank">WhatsApp</a>
+        <a href="mailto:agrox.tecnologia@gmail.com">agrox.tecnologia@gmail.com</a>
+        <button id="whatsapp-btn">Iniciar Atendimento</button>
+    </footer>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBqwVP4QQRPNvJQeISnXu63yribN0Ms1bQ&callback=initMap" async defer></script>
+    <script>
+        const userData = JSON.parse(localStorage.getItem('userData')) || {};
+        const currentDate = new Date('2025-07-21T16:39:00-03:00');
+        const urlParams = new URLSearchParams(window.location.search);
+        const email = urlParams.get('email') || userData.email;
+        let selectedClient = null;
+
+        // Mock database for clients and tasks
+        const clientsDB = JSON.parse(localStorage.getItem('clientsDB')) || [
+            { email: 'joao@agro.com', name: 'João Silva', farm: 'Fazenda Sol', area: 100, soilData: { nitrogen: 50, phosphorus: 30, potassium: 40, type: 'Argiloso', cost: 1200 } },
+            { email: 'maria@agro.com', name: 'Maria Oliveira', farm: 'Fazenda Lua', area: 150, soilData: { nitrogen: 60, phosphorus: 25, potassium: 45, type: 'Arenoso', cost: 1500 } }
+        ];
+        let tasksDB = JSON.parse(localStorage.getItem('tasksDB')) || [];
+        let recommendationsDB = JSON.parse(localStorage.getItem('recommendationsDB')) || [];
+
+        function validateProfile() {
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                alert('E-mail inválido. Faça login novamente.');
+                window.location.href = 'index.html';
+                return false;
+            }
+            userData.email = email;
+            userData.role = 'consultor';
+            localStorage.setItem('userData', JSON.stringify(userData));
+            document.getElementById('consultor-name').textContent = email.split('@')[0];
+            return true;
+        }
+
+        function loadConsultorDashboard() {
+            if (!validateProfile()) return;
+            loadClientSelector();
+            initMap();
+            loadRequests();
+            renderSoilAnalysisChart();
+            loadCalendar();
+        }
+
+        function loadClientSelector() {
+            const selector = document.getElementById('client-selector');
+            selector.innerHTML = '<option value="">Selecione um Cliente</option>';
+            clientsDB.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.email;
+                option.textContent = client.name;
+                selector.appendChild(option);
+            });
+            selector.addEventListener('change', (e) => {
+                selectedClient = clientsDB.find(c => c.email === e.target.value);
+                loadClientData();
+            });
+        }
+
+        function loadClientData() {
+            const info = document.getElementById('client-info');
+            if (selectedClient) {
+                info.innerHTML = `Nome: ${selectedClient.name}<br>Fazenda: ${selectedClient.farm}<br>Área: ${selectedClient.area} ha`;
+                loadCalendar();
+                renderSoilAnalysisChart();
+            } else {
+                info.textContent = 'Selecione um cliente para visualizar as informações.';
+                document.getElementById('calendar').innerHTML = '';
+            }
+        }
+
+        function initMap() {
+            const map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: -15.7801, lng: -47.9292 },
+                zoom: 8
+            });
+            if (selectedClient) {
+                new google.maps.Marker({
+                    position: { lat: parseFloat(selectedClient.soilData.lat || -15.7801), lng: parseFloat(selectedClient.soilData.lon || -47.9292) },
+                    map: map,
+                    title: selectedClient.farm
+                });
+            }
+        }
+
+        function loadRequests() {
+            const requestsList = document.getElementById('requests-list');
+            requestsList.innerHTML = '';
+            const clientRequests = tasksDB.filter(t => t.clientEmail === selectedClient?.email);
+            clientRequests.forEach(req => {
+                const li = document.createElement('li');
+                li.textContent = `${req.date}: ${req.description}`;
+                requestsList.appendChild(li);
+            });
+        }
+
+        function renderSoilAnalysisChart() {
+            const ctx = document.getElementById('soilAnalysisChart').getContext('2d');
+            if (window.soilChart) window.soilChart.destroy();
+            window.soilChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Nitrogênio', 'Fósforo', 'Potássio'],
+                    datasets: [{
+                        label: 'Análise de Solo (kg/ha)',
+                        data: selectedClient ? [selectedClient.soilData.nitrogen, selectedClient.soilData.phosphorus, selectedClient.soilData.potassium] : [0, 0, 0],
+                        backgroundColor: ['#4CAF50', '#2A3D66', '#FF9800']
+                    }]
+                },
+                options: {
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        function downloadSoilReport() {
+            if (!selectedClient) {
+                alert('Selecione um cliente para gerar o relatório.');
+                return;
+            }
+            const report = `
+Relatório de Análise de Solo
+Fazenda: ${selectedClient.farm}
+Data: ${currentDate.toLocaleDateString()}
+Área: ${selectedClient.area} ha
+Tipo de Solo: ${selectedClient.soilData.type}
+Nitrogênio: ${selectedClient.soilData.nitrogen} kg/ha
+Fósforo: ${selectedClient.soilData.phosphorus} kg/ha
+Potássio: ${selectedClient.soilData.potassium} kg/ha
+Custo Estimado: R$ ${selectedClient.soilData.cost.toFixed(2)}/ha
+            `;
+            const blob = new Blob([report], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `relatorio_solo_${selectedClient.farm}.txt`;
+            link.click();
+        }
+
+        function calculateFertilization() {
+            const area = parseFloat(document.getElementById('area').value);
+            const nitrogen = parseFloat(document.getElementById('nitrogen').value);
+            const phosphorus = parseFloat(document.getElementById('phosphorus').value);
+            const potassium = parseFloat(document.getElementById('potassium').value);
+            if (area && nitrogen && phosphorus && potassium) {
+                const costPerHa = (nitrogen * 10 + phosphorus * 15 + potassium * 12).toFixed(2);
+                const totalCost = (costPerHa * area).toFixed(2);
+                document.getElementById('calc-output').textContent = `Custo por ha: R$ ${costPerHa} | Custo Total: R$ ${totalCost}`;
+            } else {
+                document.getElementById('calc-output').textContent = 'Preencha todos os campos.';
+            }
+        }
+
+
+function planCrop() {
+    if (!selectedClient) {
+        document.getElementById('plan-result').textContent = 'Selecione um cliente antes de planejar.';
+        return;
+    }
+    // ... resto da função planCrop ...
+}
+
+// ... outras funções como addAction ...
+window.onload = loadConsultorDashboard; 
+
+        function saveRecommendation() {
+            const recommendation = document.getElementById('recommendation-input').value;
+            if (recommendation && selectedClient) {
+                recommendationsDB.push({ clientEmail: selectedClient.email, recommendation, date: currentDate.toISOString() });
+                localStorage.setItem('recommendationsDB', JSON.stringify(recommendationsDB));
+                document.getElementById('recommendation-status').textContent = 'Recomendação salva!';
+                document.getElementById('recommendation-input').value = '';
+                // Notify dashboard
+                const dashboardRecommendations = JSON.parse(localStorage.getItem('dashboardRecommendations')) || [];
+                dashboardRecommendations.push({ clientEmail: selectedClient.email, recommendation, date: currentDate.toISOString() });
+                localStorage.setItem('dashboardRecommendations', JSON.stringify(dashboardRecommendations));
+            } else {
+                document.getElementById('recommendation-status').textContent = 'Selecione um cliente e preencha a recomendação.';
+            }
+        }
+
+        function loadCalendar() {
+            const calendar = document.getElementById('calendar');
+            calendar.innerHTML = `
+                <div class="header">Dom</div><div class="header">Seg</div><div class="header">Ter</div><div class="header">Qua</div>
+                <div class="header">Qui</div><div class="header">Sex</div><div class="header">Sáb</div>
+            `;
+            const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            const firstDay = startOfMonth.getDay();
+            for (let i = 0; i < firstDay; i++) {
+                calendar.innerHTML += '<div></div>';
+            }
+            for (let day = 1; day <= endOfMonth.getDate(); day++) {
+                const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0];
+                const tasks = tasksDB.filter(t => t.date === date && t.clientEmail === selectedClient?.email);
+                calendar.innerHTML += `<div>${day}${tasks.length ? `<br>${tasks.map(t => t.description).join('<br>')}` : ''}</div>`;
+            }
+        }
+
+        function openTaskModal() {
+            if (!selectedClient) {
+                alert('Selecione um cliente para adicionar uma tarefa.');
+                return;
+            }
+            document.getElementById('task-modal').style.display = 'flex';
+        }
+
+        function closeTaskModal() {
+            document.getElementById('task-modal').style.display = 'none';
+        }
+
+        function addTask() {
+            const date = document.getElementById('task-date').value;
+            const description = document.getElementById('task-description').value;
+            if (date && description && selectedClient) {
+                tasksDB.push({ clientEmail: selectedClient.email, date, description });
+                localStorage.setItem('tasksDB', JSON.stringify(tasksDB));
+                loadCalendar();
+                loadRequests();
+                closeTaskModal();
+            }
+        }
+
+        document.getElementById('back-btn').addEventListener('click', () => {
+            userData.role = 'produtor';
+            localStorage.setItem('userData', JSON.stringify(userData));
+            window.location.href = `dashboard.html?email=${selectedClient?.email || ''}`;
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('userData');
+            window.location.href = 'index.html';
+        });
+
+        document.getElementById('whatsapp-btn').addEventListener('click', () => {
+            window.open('https://wa.me/5564999494453', '_blank');
+        });
+        
+        window.onload = loadConsultorDashboard;
+        function loadCalendar() {
+    const calendar = document.getElementById('calendar');
+    calendar.innerHTML = `
+        <div class="header">Dom</div><div class="header">Seg</div><div class="header">Ter</div><div class="header">Qua</div>
+        <div class="header">Qui</div><div class="header">Sex</div><div class="header">Sáb</div>
+    `;
+    const currentDate = new Date('2025-07-21T16:39:00-03:00');
+    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    const firstDay = startOfMonth.getDay();
+    const actionsDB = JSON.parse(localStorage.getItem('actionsDB')) || [];
+
+    for (let i = 0; i < firstDay; i++) {
+        calendar.innerHTML += '<div></div>';
+    }
+    for (let day = 1; day <= endOfMonth.getDate(); day++) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0];
+        const actions = actionsDB.filter(a => a.date === date && a.clientEmail === selectedClient?.email);
+        const hasActions = actions.length > 0;
+        calendar.innerHTML += `
+            <div class="${hasActions ? 'has-action' : ''}" onclick="showActions('${date}')">
+                ${day}${hasActions ? `<br>${actions.map(a => a.description).join('<br>')}` : ''}
+            </div>`;
+    }
+}
+
+function showActions(date) {
+    const actionsDB = JSON.parse(localStorage.getItem('actionsDB')) || [];
+    const actions = actionsDB.filter(a => a.date === date && a.clientEmail === selectedClient?.email);
+    if (actions.length > 0) {
+        alert(`Ações para ${date}:\n${actions.map(a => `- ${a.description}`).join('\n')}`);
+    }
+}
+
+function openActionModal() {
+    if (!selectedClient) {
+        alert('Selecione um cliente para adicionar uma ação.');
+        return;
+    }
+    document.getElementById('action-modal').style.display = 'flex';
+}
+
+function closeActionModal() {
+    document.getElementById('action-modal').style.display = 'none';
+}
+
+function addAction() {
+    const date = document.getElementById('action-date').value;
+    const description = document.getElementById('action-description').value;
+    if (date && description && selectedClient) {
+        const actionsDB = JSON.parse(localStorage.getItem('actionsDB')) || [];
+        actionsDB.push({ clientEmail: selectedClient.email, date, description });
+        localStorage.setItem('actionsDB', JSON.stringify(actionsDB));
+        loadCalendar();
+        loadRequests();
+        closeActionModal();
+        document.getElementById('action-date').value = '';
+        document.getElementById('action-description').value = '';
+    } else {
+        alert('Selecione um cliente e preencha todos os campos.');
+    }
+}
+    </script>
+</html>
